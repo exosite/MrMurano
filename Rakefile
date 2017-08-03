@@ -68,7 +68,7 @@ task :test_clean_up do
     #    sh %(ruby -Ilib bin/murano solution delete #{id})
     #  end
     #end
-    sh %(ruby -Ilib bin/murano solutions expunge -y)
+    sh %(ruby -Ilib bin/murano solutions expunge -y) do |_ok, _res| end
   end
 end
 
