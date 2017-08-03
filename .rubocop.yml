@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.31 /coding: utf-8
+# Last Modified: 2017.08.03 /coding: utf-8
 # Copyright © 2016-2017 Exosite LLC.
 # License: MIT. See LICENSE.txt.
 #  vim:tw=0:ts=2:sw=2:et:ai
@@ -101,6 +101,7 @@ Style/FileName:
   Exclude:
     - 'Gemfile'
     - 'MuranoCLI.gemspec'
+    - 'Rakefile'
     - 'lib/MrMurano.rb'
     - 'lib/MrMurano/Account.rb'
     - 'lib/MrMurano/Business.rb'
@@ -140,6 +141,14 @@ Style/NumericPredicate:
 Style/RaiseArgs:
   EnforcedStyle: compact
 
+# "Use // around regular expression."
+#Style/RegexpLiteral:
+#  # If "slashes" or "mixed":
+#  #   snake_case = /^[\dA-Z_]+$/
+#  # If "percent_r":
+#  #   snake_case = %r{^[\dA-Z_]+$}
+#  EnforcedStyle: percent_r
+
 # "Avoid comma after the last parameter of a method call."
 # FIXME/2017-06-30: Is this okay?
 Style/TrailingCommaInArguments:
@@ -167,7 +176,7 @@ AllCops:
     - 'bin/murano'
     # These are included by default:
     #- '**/Gemfile'
-    #- '**/Rakefile'
+    - '**/Rakefile'
     #- 'MuranoCLI.gemspec'
   # FIXME/2017-07-25: Finishing linting all the files!
   #   These files have not been linted since Rubocop was adopted.
@@ -178,10 +187,6 @@ AllCops:
     # 2017-07-25: It's probably not worth our time to lint the spec tests.
     # 2017-07-31: 7735 offenses in the Spec tests -- not worth it to fix!!
     - 'spec/**/*'
-    #
-    # FIXME/2017-07-25: Enable Rakefile check! [Currently: 106 offenses]
-    # 2017-07-31: 122 offenses in the Rakefile.
-    - '**/Rakefile'
     #
     # FIXME/2017-07-25: Finish linting these files, and delete from this list.
     # 2017-07-31: 943 offenses herein these 26 files.
