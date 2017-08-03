@@ -61,13 +61,14 @@ task test: %i[test_clean_up rspec]
 desc 'Clean out junk from prior hot tests'
 task :test_clean_up do
   unless ENV['MURANO_CONFIGFILE'].nil?
-    ids = `ruby -Ilib bin/murano solution list --idonly`.chomp
-    unless ids.empty?
-      puts "Found solutions #{ids}; deleting"
-      ids.split.each do |id|
-        sh %(ruby -Ilib bin/murano solution delete #{id})
-      end
-    end
+    #ids = `ruby -Ilib bin/murano solution list --idonly`.chomp
+    #unless ids.empty?
+    #  puts "Found solutions #{ids}; deleting"
+    #  ids.split.each do |id|
+    #    sh %(ruby -Ilib bin/murano solution delete #{id})
+    #  end
+    #end
+    sh %(ruby -Ilib bin/murano solutions expunge -y)
   end
 end
 
