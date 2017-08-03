@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.27 /coding: utf-8
+# Last Modified: 2017.08.03 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -315,15 +315,19 @@ RSpec.describe 'murano init', :cmd do
     end
     after(:example) do
       Dir.chdir(ENV['HOME']) do
-        out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', @product_name))
-        expect(out).to eq('')
-        expect(err).to eq('')
-        expect(status.exitstatus).to eq(0)
+        if defined?(@product_name)
+          out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', @product_name))
+          expect(out).to eq('')
+          expect(err).to eq('')
+          expect(status.exitstatus).to eq(0)
+        end
 
-        out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', @applctn_name))
-        expect(out).to eq('')
-        expect(err).to eq('')
-        expect(status.exitstatus).to eq(0)
+        if defined?(@applctn_name)
+          out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', @applctn_name))
+          expect(out).to eq('')
+          expect(err).to eq('')
+          expect(status.exitstatus).to eq(0)
+        end
       end
     end
 
