@@ -1,12 +1,14 @@
 require 'fileutils'
 require 'MrMurano/version'
 require 'MrMurano/Gateway'
+require 'MrMurano/ProjectFile'
+require 'MrMurano/SyncRoot'
 require '_workspace'
 
 RSpec.describe MrMurano::Gateway::Resources do
   include_context "WORKSPACE"
   before(:example) do
-    MrMurano::SyncRoot.reset
+    MrMurano::SyncRoot.instance.reset
     $cfg = MrMurano::Config.new
     $cfg.load
     $cfg['net.host'] = 'bizapi.hosted.exosite.io'
@@ -120,14 +122,20 @@ RSpec.describe MrMurano::Gateway::Resources do
       resfile = Pathname.new('resources.yaml')
       src = File.join(@testdir, 'spec', 'fixtures', 'gateway_resource_files', 'resources.notyaml')
       FileUtils.copy(src, resfile.to_path)
-      expect{ @gw.localitems(resfile) }.to raise_error(JSON::Schema::ValidationError)
+      #expect{ @gw.localitems(resfile) }.to raise_error(JSON::Schema::ValidationError)
+      expect {
+        @gw.localitems(resfile)
+      }.to raise_error(SystemExit).and output("\e[31mThere is an error in the config file, resources.yaml\e[0m\n\e[31m\"The property '#/' of type Array did not match the following type: object\"\e[0m\n").to_stderr
     end
 
     it "isn't valid" do
       resfile = Pathname.new('resources.yaml')
       src = File.join(@testdir, 'spec', 'fixtures', 'gateway_resource_files', 'resources.notyaml')
       FileUtils.copy(src, resfile.to_path)
-      expect{ @gw.localitems(resfile) }.to raise_error(JSON::Schema::ValidationError)
+      #expect{ @gw.localitems(resfile) }.to raise_error(JSON::Schema::ValidationError)
+      expect {
+        @gw.localitems(resfile)
+      }.to raise_error(SystemExit).and output("\e[31mThere is an error in the config file, resources.yaml\e[0m\n\e[31m\"The property '#/' of type Array did not match the following type: object\"\e[0m\n").to_stderr
     end
   end
 
@@ -204,6 +212,8 @@ RSpec.describe MrMurano::Gateway::Resources do
 
       @io = instance_double("IO")
       @p = instance_double('Pathname')
+      expect(@p).to receive(:dirname).and_return(resfile.dirname)
+      expect(@p).to receive(:extname).and_return(resfile.extname)
       expect(@p).to receive(:open).and_yield(@io)
     end
     it "removes keys" do
@@ -215,7 +225,7 @@ RSpec.describe MrMurano::Gateway::Resources do
         })
       end
 
-      @gw.syncdown_before(@p)
+      @gw.syncdown_before
       @gw.removelocal(@p, {:alias=>'fuzz'})
       @gw.syncdown_after(@p)
     end
@@ -231,7 +241,7 @@ RSpec.describe MrMurano::Gateway::Resources do
         })
       end
 
-      @gw.syncdown_before(@p)
+      @gw.syncdown_before
       @gw.download(@p, {:format=>"number", :unit=>"bibs", :settable=>false, :alias=>"greeble"})
       @gw.syncdown_after(@p)
     end
@@ -246,7 +256,7 @@ RSpec.describe MrMurano::Gateway::Resources do
         })
       end
 
-      @gw.syncdown_before(@p)
+      @gw.syncdown_before
       @gw.download(@p, {:format=>"number", :unit=>"bibs", :settable=>false, :alias=>"fuzz"})
       @gw.syncdown_after(@p)
     end

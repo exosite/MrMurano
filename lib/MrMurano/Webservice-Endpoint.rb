@@ -1,14 +1,15 @@
-# Last Modified: 2017.07.03 /coding: utf-8
+# Last Modified: 2017.07.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
 # License: MIT. See LICENSE.txt.
 #  vim:tw=0:ts=2:sw=2:et:ai
 
-require 'uri'
-require 'net/http'
 require 'json'
+require 'net/http'
 require 'pp'
+require 'uri'
+require 'MrMurano/SyncRoot'
 require 'MrMurano/Webservice'
 
 module MrMurano
@@ -33,6 +34,10 @@ module MrMurano
         @uriparts << 'endpoint'
         @project_section = :routes
         @match_header = /--#ENDPOINT (?<method>\S+) (?<path>\S+)( (?<ctype>.*))?/
+      end
+
+      def self.description
+        %(Endpoints)
       end
 
       ##
@@ -212,7 +217,7 @@ module MrMurano
       end
     end
 
-    SyncRoot.add('endpoints', Endpoint, 'A', %{Endpoints}, true)
+    SyncRoot.instance.add('endpoints', Endpoint, 'A', true)
   end
 end
 

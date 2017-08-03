@@ -1,12 +1,13 @@
 require 'fileutils'
 require 'MrMurano/version'
 require 'MrMurano/Gateway'
+require 'MrMurano/SyncRoot'
 require '_workspace'
 
 RSpec.describe MrMurano::Gateway::Settings do
   include_context "WORKSPACE"
   before(:example) do
-    MrMurano::SyncRoot.reset
+    MrMurano::SyncRoot.instance.reset
     $cfg = MrMurano::Config.new
     $cfg.load
     $cfg['net.host'] = 'bizapi.hosted.exosite.io'

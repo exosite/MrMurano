@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.14 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: probably not yet
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -65,16 +65,37 @@ RSpec.describe 'murano syncup', :cmd, :needs_password do
       # just complain about it once?
       expect(elines).to satisfy { |v| elines.length == 2 }
       elines.each do |line|
-        expect(line).to start_with("\e[33mSkipping missing location ‘")
+        expect(line.encode!('UTF-8', 'UTF-8')).to start_with("\e[33mSkipping missing location ‘")
       end
     end
 
     it "syncup" do
       out, err, status = Open3.capture3(capcmd('murano', 'syncup'))
-      expect(out).to eq('')
-      # 2017-07-13: [lb] confused how this was passing but now is not,
-      # even though I added the "Skipping missing" text weeks ago....
-      #expect(err).to eq('')
+      outl = out.lines
+      # The spec tests set --no-progress, so each sync action gets reported.
+      expect(outl[0]).to eq("Adding item table_util\n")
+      expect(outl[1]).to start_with("Removing item ")
+      # 2017-07-27: Why is the order of these not consistent? File globbing?
+      #expect(outl[2]).to eq("Removing item tsdb_exportJob\n")
+      #expect(outl[3]).to eq("Removing item timer_timer\n")
+      #expect(outl[4]).to eq("Removing item user_account\n")
+      expect(outl[2]).to start_with("Removing item ")
+      expect(outl[3]).to start_with("Removing item ")
+      expect(outl[4]).to start_with("Removing item ")
+      expect(outl[5]).to eq("Adding item POST_/api/fire\n")
+      expect(outl[6]).to eq("Adding item PUT_/api/fire/{code}\n")
+      expect(outl[7]).to eq("Adding item DELETE_/api/fire/{code}\n")
+      expect(outl[8]).to eq("Adding item GET_/api/onfire\n")
+      expect(outl[9]).to eq("Adding item /js/script.js\n")
+      expect(outl[10]).to eq("Adding item /icon.png\n")
+      expect(outl[11]).to eq("Adding item /\n")
+      expect(outl[12]).to eq("Adding item state\n")
+      expect(outl[13]).to eq("Adding item temperature\n")
+      expect(outl[14]).to eq("Adding item uptime\n")
+      expect(outl[15]).to eq("Adding item humidity\n")
+      expect(outl[16]).to eq("Updating product resources\n")
+      # err is, e.g.,
+      # "\e[33mSkipping missing location ‘/tmp/d20170727-17706-1v7jjmf/project/services’ (Application Event Handlers)\e[0m\n\e[33mSkipping missing location ‘/tmp/d20170727-17706-1v7jjmf/project/services’ (Product Event Handlers)\e[0m\n"
       verify_err_missing_location(err)
       expect(status.exitstatus).to eq(0)
 

@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.03 /coding: utf-8
+# Last Modified: 2017.07.31 /coding: utf-8
 # frozen_string_literal: probably not yet
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -93,7 +93,7 @@ RSpec.describe 'murano device', :cmd, :needs_password do
     )
 
     out, err, status = Open3.capture3(capcmd('murano', 'syncup', '--resources'))
-    expect(out).to eq('')
+    expect(out).to eq("Adding item state\nAdding item temperature\nAdding item uptime\nAdding item humidity\nUpdating product resources\n")
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
 

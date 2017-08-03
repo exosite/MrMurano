@@ -1,8 +1,8 @@
+require 'erb'
+require 'tempfile'
 require 'MrMurano/version'
 require 'MrMurano/Config'
 require '_workspace'
-require 'tempfile'
-require 'erb'
 
 RSpec.describe MrMurano::Config do
 
@@ -177,8 +177,12 @@ RSpec.describe MrMurano::Config do
       it "errors if both are defined" do
         ENV['MURANO_CONFIGFILE'] = @tmpdir + '/home/testcreate.config'
         ENV['MR_CONFIGFILE'] = @tmpdir + '/home/testcreate.config'
-        expect_any_instance_of(MrMurano::Config).to receive(:warning).once
-        expect_any_instance_of(MrMurano::Config).to receive(:error).once
+        # 2 warnings:
+        #   ENV "MR_CONFIGFILE" is no longer supported. Rename it to "MURANO_CONFIGFILE"
+        #   Both "MURANO_CONFIGFILE" and "MR_CONFIGFILE" defined,
+        #     please remove "MR_CONFIGFILE".
+        expect_any_instance_of(MrMurano::Config).to receive(:warning).twice
+        #expect_any_instance_of(MrMurano::Config).to receive(:error).once
         MrMurano::Config.new
       end
     end
@@ -410,13 +414,15 @@ RSpec.describe MrMurano::Config do
     it "config file name" do
       FileUtils.touch(@project_dir + '/.mrmuranorc')
       expect_any_instance_of(MrMurano::Config).to receive(:warning).once
-      MrMurano::Config.new
+      cfg = MrMurano::Config.new
+      cfg.validate_cmd
     end
 
     it "config directory name" do
       FileUtils.mkpath(@project_dir + '/.mrmurano')
       expect_any_instance_of(MrMurano::Config).to receive(:warning).once
-      MrMurano::Config.new
+      cfg = MrMurano::Config.new
+      cfg.validate_cmd
     end
   end
 end

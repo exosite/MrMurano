@@ -1,5 +1,5 @@
-require 'pathname'
 require 'fileutils'
+require 'pathname'
 require 'tmpdir'
 
 RSpec.shared_context "WORKSPACE" do

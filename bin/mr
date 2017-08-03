@@ -1,8 +1,16 @@
 #!/usr/bin/env ruby
+# Last Modified: 2017.07.25 /coding: utf-8
+# frozen_string_literal: true
+
+# Copyright © 2016-2017 Exosite LLC.
+# License: MIT. See LICENSE.txt.
+#  vim:tw=0:ts=2:sw=2:et:ai
+
 require 'highline'
 
-puts HighLine.color("!"*80, :yellow)
+puts HighLine.color('!' * 80, :yellow)
 puts HighLine.color("The command 'mr' is deprecated.  Use 'murano' instead.", :yellow)
-puts HighLine.color("!"*80, :yellow)
+puts HighLine.color('!' * 80, :yellow)
 
 exec 'murano', *ARGV
+

@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.13 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -20,11 +20,19 @@ module MrMurano
   # Verbose is a mixin for various terminal output features.
   module Verbose
     def verbose(msg)
-      say msg if $cfg['tool.verbose']
+      MrMurano::Verbose.verbose(msg)
+    end
+
+    def self.verbose(msg)
+      whirly_interject { say msg } if $cfg['tool.verbose']
     end
 
     def debug(msg)
-      say msg if $cfg['tool.debug']
+      MrMurano::Verbose.debug(msg)
+    end
+
+    def self.debug(msg)
+      whirly_interject { say msg } if $cfg['tool.debug']
     end
 
     def warning(msg)
@@ -32,7 +40,7 @@ module MrMurano
     end
 
     def self.warning(msg)
-      $stderr.puts HighLine.color(msg, :yellow)
+      whirly_interject { $stderr.puts(HighLine.color(msg, :yellow)) }
     end
 
     def error(msg)
@@ -41,7 +49,7 @@ module MrMurano
 
     def self.error(msg)
       # See also Commander::say_error
-      $stderr.puts HighLine.color(msg, :red)
+      whirly_interject { $stderr.puts(HighLine.color(msg, :red)) }
     end
 
     ## Output tabular data
@@ -119,13 +127,15 @@ module MrMurano
     end
 
     def self.ask_yes_no(question, default)
-      confirm = ask(question)
-      if default
-        answer = ['', 'y', 'ye', 'yes'].include?(confirm.downcase)
-      else
-        answer = !['', 'n', 'no'].include?(confirm.downcase)
+      whirly_interject do
+        confirm = ask(question)
+        if default
+          answer = ['', 'y', 'ye', 'yes'].include?(confirm.downcase)
+        else
+          answer = !['', 'n', 'no'].include?(confirm.downcase)
+        end
+        answer
       end
-      answer
     end
 
     def ask_yes_no(question, default)
@@ -168,6 +178,10 @@ module MrMurano
       MrMurano::Progress.instance.whirly_unpause
     end
 
+    def whirly_interject(&block)
+      MrMurano::Progress.instance.whirly_interject(&block)
+    end
+
     def self.whirly_start(msg)
       MrMurano::Progress.instance.whirly_start(msg)
     end
@@ -190,6 +204,10 @@ module MrMurano
 
     def self.whirly_unpause
       MrMurano::Progress.instance.whirly_unpause
+    end
+
+    def self.whirly_interject(&block)
+      MrMurano::Progress.instance.whirly_interject(&block)
     end
   end
 end

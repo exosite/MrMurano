@@ -1,10 +1,10 @@
+#require 'erb'
+require 'fileutils'
+#require 'tempfile'
 require 'MrMurano/version'
 require 'MrMurano/Config'
 require 'MrMurano/ProjectFile'
 require '_workspace'
-require 'fileutils'
-#require 'tempfile'
-#require 'erb'
 
 RSpec.describe MrMurano::ProjectFile do
 

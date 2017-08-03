@@ -88,9 +88,9 @@ RSpec.describe 'murano link', :cmd, :needs_password do
     #   Unlinked ‘linktest3e7def1b86a1d680’ from ‘linktest3e7def1b86a1d680’\n
     #   Removed ‘h2thqll2z9sqoooc0_w4w3vxla11ngg4cok_event’ from ‘linktest3e7def1b86a1d680\n
     olines = out.lines
-    expect(olines[0]).to eq("Unlinked ‘#{@solz_name}’ from ‘#{@solz_name}’\n")
-    expect(olines[1]).to a_string_starting_with("Removed ‘")
-    expect(olines[1]).to match(/^Removed ‘[_a-z0-9]*’ from ‘#{@solz_name}’\n$/)
+    expect(olines[0].encode!('UTF-8', 'UTF-8')).to eq("Unlinked ‘#{@solz_name}’ from ‘#{@solz_name}’\n")
+    expect(olines[1].encode!('UTF-8', 'UTF-8')).to a_string_starting_with("Removed ‘")
+    expect(olines[1].encode!('UTF-8', 'UTF-8')).to match(/^Removed ‘[_a-z0-9]*’ from ‘#{@solz_name}’\n$/)
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
   end

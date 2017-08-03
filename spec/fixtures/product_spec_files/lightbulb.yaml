@@ -1,13 +1,21 @@
 ---
 state:
+  allowed: []
   format: number
   settable: true
+  unit: ''
 temperature:
+  allowed: []
   format: number
   settable: true
+  unit: ''
 uptime:
+  allowed: []
   format: number
   settable: true
+  unit: ''
 humidity:
+  allowed: []
   format: number
   settable: true
+  unit: ''

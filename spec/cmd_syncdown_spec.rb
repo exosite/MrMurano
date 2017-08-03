@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.14 /coding: utf-8
+# Last Modified: 2017.07.31 /coding: utf-8
 # frozen_string_literal: probably not yet
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -36,6 +36,7 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
   end
+
   after(:example) do
     # VERIFY/2017-07-03: Skipping assign unset. Murano will clean up, right?
 
@@ -65,16 +66,46 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
 
     it "syncdown" do
       out, err, status = Open3.capture3(capcmd('murano', 'syncup'))
-      expect(out).to eq('')
-      expect(err).to eq('')
+      #expect(out).to eq('')
+      #out_lines = out.lines
+      out_lines = out.lines.map { |line| line.encode!('UTF-8', 'UTF-8') }
+      expect(out_lines).to match_array([
+        "Adding item table_util\n",
+        a_string_starting_with('Removing item '),
+        "Removing item tsdb_exportJob\n",
+        "Removing item user_account\n",
+        "Updating item timer_timer\n",
+        "Adding item device2_event\n",
+        "Adding item POST_/api/fire\n",
+        "Adding item PUT_/api/fire/{code}\n",
+        "Adding item DELETE_/api/fire/{code}\n",
+        "Adding item GET_/api/onfire\n",
+        "Adding item /js/script.js\n",
+        "Adding item /icon.png\n",
+        "Adding item /\n",
+      ])
+
+      #expect(err).to eq('')
+      expect(err).to start_with("\e[33mSkipping missing location ‘")
       expect(status.exitstatus).to eq(0)
 
       FileUtils.rm_r(['files', 'modules', 'routes', 'services'])
       expect(Dir['**/*']).to eq([])
 
       out, err, status = Open3.capture3(capcmd('murano', 'syncdown'))
-      expect(out).to eq('')
-
+      #expect(out).to eq('')
+      out_lines = out.lines.map { |line| line.encode!('UTF-8', 'UTF-8') }
+      expect(out_lines).to match_array([
+        "Adding item table_util\n",
+        "Adding item timer_timer\n",
+        "Adding item POST_/api/fire\n",
+        "Adding item DELETE_/api/fire/{code}\n",
+        "Adding item PUT_/api/fire/{code}\n",
+        "Adding item GET_/api/onfire\n",
+        "Adding item /js/script.js\n",
+        "Adding item /icon.png\n",
+        "Adding item /\n",
+      ])
       # Look for skipping missing location lines, e.g.,
       #   "\e[33mSkipping missing location /tmp/d20170623-20035-17496y/project/modules\e[0m\n"
       # 2017-07-03: Did I [lb] change syncdown not to complain about missing locations?
@@ -84,7 +115,8 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
       #  a_string_ending_with("modules\e[0m\n"),
       #  a_string_ending_with("services\e[0m\n"),
       #)
-      expect(err).to eq('')
+      #expect(err).to eq('')
+      expect(err).to start_with("\e[33mSkipping missing location ‘")
       expect(status.exitstatus).to eq(0)
 
       after = Dir['**/*'].sort

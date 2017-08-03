@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.13 /coding: utf-8
+# Last Modified: 2017.07.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -62,11 +62,11 @@ module MrMurano
             a << %{-d '#{request.body}'}
           end
         end
-        if $cfg['tool.curlfile_f'].nil?
+        if $cfg.curlfile_f.nil?
           puts a.join(' ')
         else
-          $cfg['tool.curlfile_f'] << a.join(' ') + "\n\n"
-          $cfg['tool.curlfile_f'].flush
+          $cfg.curlfile_f << a.join(' ') + "\n\n"
+          $cfg.curlfile_f.flush
         end
       end
     end

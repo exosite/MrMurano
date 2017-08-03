@@ -1,9 +1,10 @@
-require 'MrMurano/version'
-require 'MrMurano/Setting'
-require 'MrMurano/SyncUpDown'
-require 'MrMurano/ProjectFile'
 require 'tempfile'
 require 'yaml'
+require 'MrMurano/version'
+require 'MrMurano/ProjectFile'
+require 'MrMurano/Setting'
+require 'MrMurano/SyncRoot'
+require 'MrMurano/SyncUpDown'
 require '_workspace'
 
 module ::MrMurano
@@ -22,7 +23,7 @@ end
 RSpec.describe MrMurano::Setting do
   include_context "WORKSPACE"
   before(:example) do
-    MrMurano::SyncRoot.reset
+    MrMurano::SyncRoot.instance.reset
     $cfg = MrMurano::Config.new
     $cfg.load
     $cfg['net.host'] = 'bizapi.hosted.exosite.io'

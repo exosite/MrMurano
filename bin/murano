@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-# Last Modified: 2017.07.01 /coding: utf-8
+# Last Modified: 2017.07.31 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -14,6 +14,8 @@ require 'pathname'
 require 'rainbow'
 require 'rubygems'
 require 'MrMurano'
+require 'MrMurano/Config'
+require 'MrMurano/ProjectFile'
 
 # DEVs: Store environs in an .env file that gets loaded here. Alternatively,
 #   run a Bash or similar script before you start developing.
@@ -37,27 +39,13 @@ program :description, %(
 default_command :help
 
 # Look for .murano/config files.
-$cfg = MrMurano::Config.new
+$cfg = MrMurano::Config.new(::Commander::Runner.instance)
 $cfg.load
+$cfg.validate_cmd
 
-# Look for a legacy Solutionfile.json.
+# Look for a (legacy) Solutionfile.json.
 $project = MrMurano::ProjectFile.new
 $project.load
-
-# Most commands should be run from within a Murano project (sub-)directory.
-# If user is running a project command not within a project directory,
-# we'll print a message now and exit the app from run_active_command later.
-runner = ::Commander::Runner.instance
-the_cmd = runner.active_command
-unless the_cmd.name == 'help' || the_cmd.project_not_required || $cfg.project_exists
-  MrMurano::Verbose.error %(The "#{the_cmd.name}" command only works in a Murano project.)
-  say %(Please change to a project directory, or run `murano init` to create a new project.)
-  # Note that commnander-rb uses an at_exit hook, which we hack around.
-  runner.command_exit = 1
-end
-#module MrMurano
-#  IS_PROJECT_CMD = !(the_cmd.name == "help" || the_cmd.project_not_required)
-#end
 
 # Look for plug-ins.
 pgds = [

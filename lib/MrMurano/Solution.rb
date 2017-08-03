@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.05 /coding: utf-8
+# Last Modified: 2017.07.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -44,6 +44,7 @@ module MrMurano
     # @param path String: any additional parts for the URI
     # @return URI: The full URI for this enpoint.
     def endpoint(path='')
+      super
       parts = ['https:/', $cfg['net.host'], 'api:1'] + @uriparts
       s = parts.map(&:to_s).join('/')
       URI(s + path.to_s)
@@ -262,7 +263,9 @@ module MrMurano
       type.to_s.capitalize
     end
 
-    # FIXME/Rubocop/2017-07-02: Style/AccessorMethodName:
+    # FIXME/Rubocop/2017-07-02: Style/AccessorMethodName
+    #   Rename set_name, perhaps to apply_name?
+    # rubocop:disable Style/AccessorMethodName
     def set_name(name=nil)
       # Use duck typing instead of `is_a? String` to be more duck-like.
       if name.respond_to?(:to_str) && name != ''
@@ -275,7 +278,9 @@ module MrMurano
       end
     end
 
-    # FIXME/Rubocop/2017-07-02: Style/AccessorMethodName:
+    # FIXME/Rubocop/2017-07-02: Style/AccessorMethodName
+    #   Or maybe no. Cannot create method `def name!=(name)` and I [lb]
+    #   kinda like the bang!. You could call it apply_name!, perhaps.
     def set_name!(name)
       raise 'Expecting name, not nothing' unless name && name != ''
       raise MrMurano::ConfigError.new(name_validate_help) unless name.match(name_validate_regex)

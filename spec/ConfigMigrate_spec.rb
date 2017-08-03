@@ -1,9 +1,10 @@
+#require 'erb'
+require 'highline/import'
+#require 'tempfile'
 require 'MrMurano/version'
 require 'MrMurano/Config-Migrate'
-require 'highline/import'
+require 'MrMurano/ProjectFile'
 require '_workspace'
-#require 'tempfile'
-#require 'erb'
 
 RSpec.describe MrMurano::ConfigMigrate do
   include_context "WORKSPACE"
@@ -16,6 +17,9 @@ RSpec.describe MrMurano::ConfigMigrate do
     $cfg = MrMurano::Config.new
     $cfg.load
     $cfg['net.host'] = 'bizapi.hosted.exosite.io'
+
+    $project = MrMurano::ProjectFile.new
+    $project.load
 
     @lry = Pathname.new(@project_dir) + '.Solutionfile.secret'
     FileUtils.copy(File.join(@testdir, 'spec/fixtures/SolutionFiles/secret.json'), @lry.to_path)

@@ -1,7 +1,8 @@
-require 'MrMurano/version'
-require 'MrMurano/Webservice-Endpoint'
 require 'tempfile'
 require '_workspace'
+require 'MrMurano/version'
+require 'MrMurano/ProjectFile'
+require 'MrMurano/Webservice-Endpoint'
 
 RSpec.describe MrMurano::Webservice::Endpoint do
   include_context "WORKSPACE"

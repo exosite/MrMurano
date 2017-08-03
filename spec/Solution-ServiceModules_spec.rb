@@ -1,6 +1,7 @@
-require 'MrMurano/version'
-require 'MrMurano/Solution-Services'
 require 'tempfile'
+require 'MrMurano/version'
+require 'MrMurano/ProjectFile'
+require 'MrMurano/Solution-Services'
 require '_workspace'
 
 RSpec.describe MrMurano::Module do

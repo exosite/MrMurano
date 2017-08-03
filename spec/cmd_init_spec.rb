@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.14 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -15,9 +15,11 @@ RSpec.describe 'murano init', :cmd do
 
   def expectedResponseWhenIdsFoundInConfig(
     t,
+    expect_rebasing: false,
     has_one_each_soln: false,
     has_no_solutions: false,
     expect_proj_file_write: true,
+    creates_some_default_directories: false,
     local_files_found: false,
     local_files_found_application: false,
     local_files_found_product: false
@@ -25,7 +27,17 @@ RSpec.describe 'murano init', :cmd do
     expecting = []
     expecting += [
       "\n", # 0
-      t.a_string_starting_with('Creating project at '), # 1
+    ]
+    if !expect_rebasing
+      expecting += [
+        t.a_string_starting_with('Creating project at '), # 1
+      ]
+    else
+      expecting += [
+        t.a_string_starting_with('Rebasing project at '), # 1
+      ]
+    end
+    expecting += [
       "\n", # 2
       t.a_string_starting_with('Found User '), # 3
       "\n", # 4
@@ -73,8 +85,16 @@ RSpec.describe 'murano init', :cmd do
         "\n",
       ]
     end
+    if !creates_some_default_directories
+      expecting += [
+        "Created default directories\n",
+      ]
+    else
+      expecting += [
+        "Created some default directories\n",
+      ]
+    end
     expecting += [
-      "Created default directories\n",
       "\n",
     ]
     if local_files_found || local_files_found_application
@@ -89,6 +109,18 @@ RSpec.describe 'murano init', :cmd do
         "\n",
       ]
     end
+    expecting += [
+      t.a_string_matching(%r{Adding item \w+_event\n}),
+      # Order not consistent...
+      #"Adding item tsdb_exportJob\n",
+      #"Adding item timer_timer\n",
+      #"Adding item user_account\n",
+      t.a_string_starting_with('Adding item '),
+      t.a_string_starting_with('Adding item '),
+      t.a_string_starting_with('Adding item '),
+      "Synced 4 items\n",
+      "\n",
+    ]
     expecting += [
       "Success!\n",
       "\n",
@@ -301,6 +333,8 @@ RSpec.describe 'murano init', :cmd do
       out, err, status = Open3.capture3(capcmd('murano', 'init'))
       the_expected = expectedResponseWhenIdsFoundInConfig(
         self,
+        expect_rebasing: true,
+        creates_some_default_directories: true,
         # Because the /tmp/murcli-test/services directory is empty,
         # murano init *will* download all the event handlers.
         #local_files_found: true,
@@ -326,7 +360,9 @@ RSpec.describe 'murano init', :cmd do
       out, err, status = Open3.capture3(capcmd('murano', 'init'))
       expected = expectedResponseWhenIdsFoundInConfig(
         self,
+        expect_rebasing: true,
         expect_proj_file_write: false,
+        creates_some_default_directories: true,
         # Because the /tmp/murcli-test/services directory is empty,
         # murano init *will* download all the event handlers.
         #local_files_found: true,
@@ -366,6 +402,8 @@ RSpec.describe 'murano init', :cmd do
       out, err, status = Open3.capture3(capcmd('murano', 'init'))
       expected = expectedResponseWhenIdsFoundInConfig(
         self,
+        expect_rebasing: true,
+        creates_some_default_directories: true,
         # Because the /tmp/murcli-test/services directory is empty,
         # murano init *will* download all the event handlers.
         ##local_files_found_application: true,
@@ -407,6 +445,8 @@ RSpec.describe 'murano init', :cmd do
       out, err, status = Open3.capture3(capcmd('murano', 'init'))
       expected = expectedResponseWhenIdsFoundInConfig(
         self,
+        expect_rebasing: true,
+        creates_some_default_directories: true,
         # Because the /tmp/murcli-test/services directory is empty,
         # murano init *will* download all the event handlers.
         ##local_files_found_application: true,

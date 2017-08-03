@@ -69,7 +69,7 @@ RSpec.describe MrMurano::Http do
 
     it "puts something" do
       $cfg['tool.curldebug'] = true
-      $cfg['tool']['curlfile_f'] = nil
+      $cfg.curlfile_f = nil
       $stdout = StringIO.new
       @tst.curldebug(@req)
       expect($stdout.string).to eq(%{curl -s -H 'User-Agent: test' -H 'Content-Type: application/json' -X GET 'https://test.host/this/is/a/test'\n})
@@ -77,7 +77,7 @@ RSpec.describe MrMurano::Http do
 
     it "puts something with Auth" do
       $cfg['tool.curldebug'] = true
-      $cfg['tool']['curlfile_f'] = nil
+      $cfg.curlfile_f = nil
       $stdout = StringIO.new
       @req['Authorization'] = 'LetMeIn'
       @tst.curldebug(@req)
@@ -86,7 +86,7 @@ RSpec.describe MrMurano::Http do
 
     it "puts something with Body" do
       $cfg['tool.curldebug'] = true
-      $cfg['tool']['curlfile_f'] = nil
+      $cfg.curlfile_f = nil
       $stdout = StringIO.new
       @req.body = "builder"
       @tst.curldebug(@req)

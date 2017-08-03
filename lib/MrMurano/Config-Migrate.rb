@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.02 /coding: utf-8
+# Last Modified: 2017.07.25 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -41,6 +41,8 @@ module MrMurano
         end
 
         $cfg.set('user.name', ss['email'])
+        $project.refresh_user_name
+
         $cfg.set('application.id', ss['solution_id']) if ss.key? 'solution_id'
         $cfg.set('product.id', ss['product_id']) if ss.key? 'product_id'
       end

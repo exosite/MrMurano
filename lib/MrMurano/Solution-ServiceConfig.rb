@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.05 /coding: utf-8
+# Last Modified: 2017.07.25 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -157,8 +157,8 @@ module MrMurano
       sevs = list
       ret = []
       sevs.each do |srv|
-        scm = schema(srv[:id]) or {}
-        (scm['x-events'.to_sym] or {}).each_pair do |event, info|
+        scm = schema(srv[:id]) || {}
+        (scm['x-events'.to_sym] || {}).each_pair do |event, _info|
           ret << [srv[:alias], event]
         end
       end

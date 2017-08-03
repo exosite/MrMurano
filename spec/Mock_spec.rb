@@ -1,6 +1,6 @@
+require 'tempfile'
 require 'MrMurano/Config'
 require 'MrMurano/Mock'
-require 'tempfile'
 require '_workspace'
 
 RSpec.describe MrMurano::Mock, "#mock" do

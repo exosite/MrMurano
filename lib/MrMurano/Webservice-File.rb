@@ -1,9 +1,10 @@
-require 'uri'
-require 'net/http'
-require "http/form_data"
 require 'digest/sha1'
+require "http/form_data"
 require 'mime/types'
+require 'net/http'
+require 'uri'
 require 'MrMurano/Webservice'
+require 'MrMurano/SyncRoot'
 
 module MrMurano
   module Webservice
@@ -24,6 +25,10 @@ module MrMurano
         @uriparts << 'file'
         @itemkey = :path
         @project_section = :assets
+      end
+
+      def self.description
+        %(Static Files)
       end
 
       ##
@@ -115,11 +120,11 @@ module MrMurano
             a << %{-X #{request.method}}
             a << %{'#{request.uri.to_s}'}
             a << %{-F file=@#{local.to_s}}
-            if $cfg['tool.curlfile_f'].nil?
+            if $cfg.curlfile_f.nil?
               puts a.join(' ')
             else
-              $cfg['tool.curlfile_f'] << a.join(' ') + "\n\n"
-              $cfg['tool.curlfile_f'].flush
+              $cfg.curlfile_f << a.join(' ') + "\n\n"
+              $cfg.curlfile_f.flush
             end
           end
 
@@ -178,9 +183,9 @@ module MrMurano
         return (itemA[:mime_type] != itemB[:mime_type] or
           itemA[:checksum] != itemB[:checksum])
       end
-
     end
-    SyncRoot.add('files', File, 'S', %{Static Files}, true)
+
+    SyncRoot.instance.add('files', File, 'S', true)
   end
 end
 #  vim: set ai et sw=2 ts=2 :

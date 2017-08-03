@@ -1,128 +1,31 @@
-# Last Modified: 2017.07.14 /coding: utf-8
+# Last Modified: 2017.07.31 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
 # License: MIT. See LICENSE.txt.
 #  vim:tw=0:ts=2:sw=2:et:ai
 
+# FIXME/MAYBE: Fix semicolon usage.
+# rubocop:disable Style/Semicolon
+
 require 'open3'
 require 'pathname'
-require 'shellwords'
+#require 'shellwords'
 require 'tempfile'
-require 'whirly'
-require 'MrMurano/Config'
-require 'MrMurano/ProjectFile'
-require 'MrMurano/hash'
+require 'MrMurano/progress'
+require 'MrMurano/verbosing'
+#require 'MrMurano/hash'
+#require 'MrMurano/Config'
+#require 'MrMurano/ProjectFile'
+##require 'MrMurano/SyncRoot'
 
 module MrMurano
-  ## Track what things are syncable.
-  class SyncRoot
-    # A thing that is syncable.
-    Syncable = Struct.new(:name, :class, :type, :desc, :bydefault) do
-    end
-
-    ##
-    # Add a new entry to syncable things
-    # @param name [String] The name to use for the long option
-    # @param klass [Class] The class to instanciate from
-    # @param type [String] Single letter for short option and status listing
-    # @param desc [String] Summary of what this syncs.
-    # @param bydefault [Boolean] Is this part of the default sync group
-    #
-    # @return [nil]
-    def self.add(name, klass, type, desc, bydefault=false)
-      @@syncset = [] unless defined?(@@syncset)
-      # 2017-06-20: Maybe possibly enforce unique name policy for --syncset options.
-      #@@syncset.each do |a|
-      #  if a.name == name.to_s
-      #    msg = %{WARNING: SyncRoot.add called more than once for name "#{a.name}"}
-      #    $stderr.puts HighLine.color(msg, :yellow)
-      #  end
-      #end
-      @@syncset << Syncable.new(name.to_s, klass, type, desc, bydefault)
-      nil
-    end
-
-    ##
-    # Remove all syncables.
-    def self.reset()
-      @@syncset = []
-    end
-
-    ##
-    # Get the list of default syncables.
-    # @return [Array<String>] array of names
-    def self.bydefault
-      @@syncset = [] unless defined?(@@syncset)
-      @@syncset.select { |a| a.bydefault }.map { |a| a.name }
-    end
-
-    ##
-    # Iterate over all syncables
-    # @param block code to run on each
-    def self.each(&block)
-      @@syncset = [] unless defined?(@@syncset)
-      @@syncset.each { |a| yield a.name, a.type, a.class }
-    end
-
-    ##
-    # Iterate over all syncables with option arguments.
-    # @param block code to run on each
-    def self.each_option(&block)
-      @@syncset = [] unless defined?(@@syncset)
-      @@syncset.each { |a| yield "-#{a.type.downcase}", "--[no-]#{a.name}", a.desc }
-    end
-
-    ##
-    # Iterate over just the selected syncables.
-    # @param opt [Hash{Symbol=>Boolean}] Options hash of which to select from
-    # @param block code to run on each
-    def self.each_filtered(opt, &block)
-      @@syncset = [] unless defined?(@@syncset)
-      self.checkSAME(opt)
-      @@syncset.each do |a|
-        if opt[a.name.to_sym] or opt[a.type.to_sym]
-          yield a.name, a.type, a.class, a.desc
-        end
-      end
-    end
-
-    ## Adjust options based on all or none
-    # If none are selected, select the bydefault ones.
-    #
-    # @param opt [Hash{Symbol=>Boolean}] Options hash of which to select from
-    #
-    # @return [nil]
-    def self.checkSAME(opt)
-      @@syncset = [] unless defined?(@@syncset)
-      if opt[:all]
-        @@syncset.each { |a| opt[a.name.to_sym] = true }
-      else
-        any = @@syncset.select {|a| opt[a.name.to_sym] or opt[a.type.to_sym]}
-        if any.empty?
-          bydef = $cfg['sync.bydefault'].split
-          @@syncset.select{ |a| bydef.include? a.name }.each{ |a| opt[a.name.to_sym] = true }
-        end
-      end
-
-      nil
-    end
-
-    ##
-    # Return the @@syncset
-    # @return [Array<String>] array of Syncables
-    def self.syncset
-      @@syncset
-    end
-  end
-
   ## The functionality of a Syncable thing.
   #
   # This provides the logic for computing what things have changed, and pushing and
   # pulling those things.
   #
   module SyncUpDown
-
     # This is one item that can be synced.
     class Item
       # @return [String] The name of this item.
@@ -143,6 +46,8 @@ module MrMurano
       attr_accessor :selected
       # @return [String] The constructed name used to match local items to remote items.
       attr_accessor :synckey
+      # @return [String] The syncable type.
+      attr_accessor :synctype
       # @return [String] For device2, the event type.
       attr_accessor :type
       # @return [String] For testing, the updated_at time the server would otherwise indicate.
@@ -159,17 +64,17 @@ module MrMurano
       #  item = Item.new(:name => 'get')
       #  Item.new(item)
       def initialize(hsh={})
-        hsh.each_pair{|k,v| self[k] = v}
+        hsh.each_pair { |k, v| self[k] = v }
       end
 
       def as_inst(key)
         return key if key.to_s[0] == '@'
-        return "@#{key}"
+        "@#{key}"
       end
       private :as_inst
       def as_sym(key)
         return key.to_sym if key.to_s[0] != '@'
-        return key.to_s[1..-1].to_sym
+        key.to_s[1..-1].to_sym
       end
       private :as_sym
 
@@ -183,7 +88,7 @@ module MrMurano
       # Set attribute as if this was a Hash
       # @param key [String,Symbol] attribute name
       # @param value [Object] value to set
-      def []=(key,value)
+      def []=(key, value)
         public_send("#{key}=", value)
       end
 
@@ -197,14 +102,14 @@ module MrMurano
 
       # @return [Hash{Symbol=>Object}] A hash that represents this Item
       def to_h
-        Hash[ instance_variables.map{|k| [ as_sym(k), instance_variable_get(k)]} ]
+        Hash[instance_variables.map { |k| [as_sym(k), instance_variable_get(k)] }]
       end
 
       # Adds the contents of item to self.
       # @param item [Item,Hash] Stuff to merge
       # @return [Item] ourself
       def merge!(item)
-        item.each_pair{|k,v| self[k] = v}
+        item.each_pair { |k, v| self[k] = v }
         self
       end
 
@@ -219,7 +124,7 @@ module MrMurano
       # @yieldparam key [Symbol] The name of the key
       # @yieldparam value [Object] The value for that key
       # @return [Item]
-      def each_pair(&block)
+      def each_pair
         instance_variables.each do |key|
           yield as_sym(key), instance_variable_get(key)
         end
@@ -231,7 +136,7 @@ module MrMurano
       # @yieldparam value [Object] The value for that key
       # @yieldreturn [Boolean] True to delete this key
       # @return [Item] Ourself.
-      def reject!(&block)
+      def reject!(&_block)
         instance_variables.each do |key|
           drop = yield as_sym(key), instance_variable_get(key)
           delete(key) if drop
@@ -250,8 +155,10 @@ module MrMurano
 
       # For unit testing.
       include Comparable
-      def <=>(anOther)
-        self.to_h <=> anOther.to_h
+      def <=>(other)
+        # rubocop:disable Style/RedundantSelf: Redundant self detected.
+        #   MAYBE/2017-07-18: Permanently disable Style/RedundantSelf?
+        self.to_h <=> other.to_h
       end
     end
 
@@ -273,9 +180,9 @@ module MrMurano
     # Children objects Must override this
     #
     # @param itemkey [String] The identifying key for this item
-    def remove(itemkey)
+    def remove(_itemkey)
       # :nocov:
-      raise "Forgotten implementation"
+      raise 'Forgotten implementation'
       # :nocov:
     end
 
@@ -286,9 +193,9 @@ module MrMurano
     # @param src [Pathname] Full path of where to upload from
     # @param item [Hash] The item details to upload
     # @param modify [Bool] True if item exists already and this is changing it
-    def upload(src, item, modify)
+    def upload(_src, _item, _modify)
       # :nocov:
-      raise "Forgotten implementation"
+      raise 'Forgotten implementation'
       # :nocov:
     end
 
@@ -297,7 +204,7 @@ module MrMurano
     #
     # Children objects must override this
     #
-    def docmp(itemA, itemB)
+    def docmp(_item_a, _item_b)
       true
     end
 
@@ -351,7 +258,7 @@ module MrMurano
       itemkey = @itemkey.to_sym
       name = tolocalname(item, itemkey)
       raise "Bad key(#{itemkey}) for #{item}" if name.nil?
-      name = Pathname.new(name) unless name.kind_of? Pathname
+      name = Pathname.new(name) unless name.is_a? Pathname
       name = name.relative_path_from(Pathname.new('/')) if name.absolute?
       into + name
     end
@@ -365,7 +272,7 @@ module MrMurano
     # @param item [Item] Item to be checked
     # @param pattern [String] pattern to check with
     # @return [Bool] true or false
-    def match(item, pattern)
+    def match(_item, _pattern)
       false
     end
 
@@ -404,36 +311,51 @@ module MrMurano
           io.write chunk
         end
       end
-      # Give the local file the same timestamp as the remote, because diff.
-      # FIXME/MUR-XXXX: Ideally, server should has a hash or something we can compare.
-      if item[:updated_at]
-        mod_time = DateTime.parse(item[:updated_at]).to_time
-        begin
-          FileUtils.touch [local.to_path,], :mtime => mod_time
-        rescue Errno::EACCES => err
-          # This happens on Windows...
-          require 'rbconfig'
-          # Check the platform, e.g., "linux-gnu", or other.
-          is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
+      update_mtime(local, item)
+    end
+
+    def diff_download(tmp_path, merged)
+      download(tmp_path, merged)
+    end
+
+    ## Give the local file the same timestamp as the remote, because diff.
+    #
+    # @param local [Pathname] Full path of where to download to
+    # @param item [Item] The item to download
+    def update_mtime(local, item)
+      # FIXME/MUR-XXXX: Ideally, server should use a hash we can compare.
+      #   For now, we use the sometimes set :updated_at value.
+      # FIXME/EXPLAIN/2017-06-23: Why is :updated_at sometimes not set?
+      #   (See more comments, below.)
+      return unless item[:updated_at]
+
+      mod_time = DateTime.parse(item[:updated_at]).to_time
+      begin
+        FileUtils.touch([local.to_path], mtime: mod_time)
+      rescue Errno::EACCES => err
+        # This happens on Windows...
+        require 'rbconfig'
+        # Check the platform, e.g., "linux-gnu", or other.
+        is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
+        unless is_windows
           $stderr.puts(
             "Unexpected: touch failed on non-Windows machine / host_os: #{RbConfig::CONFIG['host_os']} / err: #{err}"
-          ) unless is_windows
-
-          # 2017-07-13: Nor does ctime work.
-          #   Errno::EACCES:
-          #   Permission denied @ utime_failed -
-          #     C:/Users/ADMINI~1/AppData/Local/Temp/2/one.lua_remote_20170714-1856-by2nzk.lua
-          #File.utime(mod_time, mod_time, local.to_path)
-
-          # 2017-07-14: So this probably fails, too...
-          #FileUtils.touch [local.to_path,], :ctime => mod_time
-
-          # MAYBE/2017-07-14: How to make diff work on Windows?
-          #   Would need to store timestamp in metafile?
+          )
         end
 
-      else
-        # FIXME/EXPLAIN/2017-06-23: Why is :updated_at not set?
+        # 2017-07-13: Nor does ctime work.
+        #   Errno::EACCES:
+        #   Permission denied @ utime_failed -
+        #     C:/Users/ADMINI~1/AppData/Local/Temp/2/one.lua_remote_20170714-1856-by2nzk.lua
+        #File.utime(mod_time, mod_time, local.to_path)
+
+        # 2017-07-14: So this probably fails, too...
+        #FileUtils.touch [local.to_path,], :ctime => mod_time
+
+        # MAYBE/2017-07-14: How to make diff work on Windows?
+        #   Would need to store timestamp in metafile?
+
+        # FIXME/EXPLAIN/2017-06-23: Why is :updated_at sometimes not set?
         #     And why have I only triggered this from ./spec/cmd_syncdown_spec.rb ?
         #       (Probably because nothing else makes routes or files?)
         #     Here are the items in question:
@@ -476,15 +398,18 @@ module MrMurano
     def syncup_after
     end
 
-    def syncdown_before(local)
+    def syncdown_before
     end
 
-    def syncdown_after(local)
+    def syncdown_after(_local)
+    end
+
+    def diff_item_write(io, merged, _local, _remote)
+      io << merged[:local_path].read
     end
 
     #
     #######################################################################
-
 
     # So, for bundles this needs to look at all the places
     # and build up the merged stack of local items.
@@ -562,7 +487,18 @@ module MrMurano
           end
         end
       elsif !skip_warn
-        warning "Skipping missing location ‘#{location}’"
+        @missing_complaints = [] unless defined?(@missing_complaints)
+        unless @missing_complaints.include?(location)
+          # MEH/2017-07-31: This message is a little misleading on syncdown,
+          #   e.g., in rspec ./spec/cmd_syncdown_spec.rb, one test blows away
+          #   local directories and does a syncdown, and on stderr you'll see
+          #     Skipping missing location ‘/tmp/d20170731-3150-1f50uj4/project/specs/resources.yaml’ (Resources)
+          #   but then later in the syncdown, that directory and file gets created.
+          msg = "Skipping missing location ‘#{location}’"
+          msg += " (#{self.class.description})" unless self.class.description.to_s.empty?
+          warning(msg)
+          @missing_complaints << location
+        end
       end
       items.values
     end
@@ -571,22 +507,24 @@ module MrMurano
     # Get the full path for the local versions
     # @return [Pathname] Location for local items
     def location
-      raise "Missing @project_section" if @project_section.nil?
+      raise 'Missing @project_section' if @project_section.nil?
       Pathname.new($cfg['location.base']) + $project["#{@project_section}.location"]
     end
 
     ##
     # Returns array of globs to search for files
     # @return [Array<String>] of Strings that are globs
+    # rubocop:disable Style/MethodName: Use snake_case for method names.
+    #  MAYBE/2017-07-18: Rename this. Beware the config has a related keyname.
     def searchFor
-      raise "Missing @project_section" if @project_section.nil?
+      raise 'Missing @project_section' if @project_section.nil?
       $project["#{@project_section}.include"]
     end
 
     ## Returns array of globs of files to ignore
     # @return [Array<String>] of Strings that are globs
     def ignoring
-      raise "Missing @project_section" if @project_section.nil?
+      raise 'Missing @project_section' if @project_section.nil?
       $project["#{@project_section}.exclude"]
     end
 
@@ -604,17 +542,21 @@ module MrMurano
       search_in = from.to_s
       sf = searchFor.map { |i| ::File.join(search_in, i) }
       debug "#{self.class}: Globs: #{sf}"
-      items = Dir[*sf].flatten.compact.reject do |p|
-        ::File.directory?(p) or ignoring.any? do |i|
-          ::File.fnmatch(i,p)
+      # 2017-07-27: Add uniq to cull duplicate entries that globbing
+      # all the ways might produce, otherwise status/sync/diff complain
+      # about duplicate resources. I [lb] think this problem has existed
+      # but was exacerbated by the change to support sub-directory scripts.
+      items = Dir[*sf].uniq.flatten.compact.reject do |p|
+        ::File.directory?(p) || ignoring.any? do |i|
+          ::File.fnmatch(i, p)
         end
       end
       items = items.map do |path|
         path = Pathname.new(path).realpath
         item = to_remote_item(from, path)
-        if item.kind_of?(Array)
+        if item.is_a?(Array)
           item.compact.map { |i| i[:local_path] = path; i }
-        elsif not item.nil?
+        elsif !item.nil?
           item[:local_path] = path
           item
         end
@@ -635,6 +577,7 @@ module MrMurano
       # objects. I have not nice thoughts about that.
       begin
         hsh = hsh.__hash__
+      # rubocop:disable Lint/HandleExceptions: Do not suppress exceptions.
       rescue NoMethodError
         # swallow this.
       end
@@ -644,10 +587,10 @@ module MrMurano
     private :elevate_hash
 
     def sync_update_progress(msg)
-      unless $cfg['tool.no-progress']
-        MrMurano::Verbose.whirly_msg "#{msg}..."
+      if $cfg['tool.no-progress']
+        say(msg)
       else
-        verbose msg
+        MrMurano::Verbose.verbose(msg + "\n")
       end
     end
 
@@ -660,40 +603,60 @@ module MrMurano
     # @param selected [Array<String>] Filters for _matcher
     def syncup(options={}, selected=[])
       options = elevate_hash(options)
-      itemkey = @itemkey.to_sym
       options[:asdown] = false
-      syncup_before
+
+      num_synced = 0
+
       dt = status(options, selected)
+
       toadd = dt[:toadd]
       todel = dt[:todel]
       tomod = dt[:tomod]
 
-      if options[:delete]
-        todel.each do |item|
-          sync_update_progress("Removing item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            remove(item[itemkey])
-          end
+      itemkey = @itemkey.to_sym
+      todel.each do |item|
+        syncup_item(item, options, :delete, 'Removing') do |aitem|
+          remove(aitem[itemkey])
+          num_synced += 1
         end
       end
-      if options[:create]
-        toadd.each do |item|
-          sync_update_progress("Adding item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            upload(item[:local_path], item.reject{|k,v| k==:local_path}, false)
-          end
+      toadd.each do |item|
+        syncup_item(item, options, :create, 'Adding') do |aitem|
+          upload(aitem[:local_path], aitem.reject { |k, _v| k == :local_path }, false)
+          num_synced += 1
         end
       end
-      if options[:update]
-        tomod.each do |item|
-          sync_update_progress("Updating item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            upload(item[:local_path], item.reject{|k,v| k==:local_path}, true)
-          end
+      tomod.each do |item|
+        syncup_item(item, options, :update, 'Updating') do |aitem|
+          upload(aitem[:local_path], aitem.reject { |k, _v| k == :local_path }, true)
+          num_synced += 1
         end
       end
-      MrMurano::Verbose.whirly_stop(force: true)
+
       syncup_after
+
+      MrMurano::Verbose.whirly_stop(force: true)
+
+      num_synced
+    end
+
+    def syncup_item(item, options, action, verbage)
+      if options[action]
+        if !$cfg['tool.dry']
+          prog_msg = "#{verbage.capitalize} item #{item[:synckey]}"
+          prog_msg += " (#{item[:synctype]})" if $cfg['tool.verbose']
+          sync_update_progress(prog_msg)
+          yield item
+        else
+          MrMurano::Verbose.whirly_interject do
+            say("--dry: Not #{verbage.downcase} item #{item[:synckey]}")
+          end
+        end
+      elsif $cfg['tool.verbose']
+        MrMurano::Verbose.whirly_interject do
+          say("--no-#{action}: Not #{verbage.downcase} item #{item[:synckey]}")
+        end
+      end
     end
 
     ## Make things in local project look like Murano
@@ -708,74 +671,118 @@ module MrMurano
       options[:asdown] = true
       options[:skip_missing_warning] = true
 
-      into = location ###
-      syncdown_before(into)
+      num_synced = 0
+
       dt = status(options, selected)
 
       toadd = dt[:toadd]
       todel = dt[:todel]
       tomod = dt[:tomod]
 
-      if options[:delete]
-        todel.each do |item|
-          sync_update_progress("Removing item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            dest = tolocalpath(into, item)
-            removelocal(dest, item)
-          end
+      into = location
+      todel.each do |item|
+        syncdown_item(item, into, options, :delete, 'Removing') do |dest, aitem|
+          removelocal(dest, aitem)
+          num_synced += 1
         end
       end
-      if options[:create]
-        toadd.each do |item|
-          sync_update_progress("Adding item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            dest = tolocalpath(into, item)
-            download(dest, item)
-          end
+      toadd.each do |item|
+        syncdown_item(item, into, options, :create, 'Adding') do |dest, aitem|
+          download(dest, aitem)
+          num_synced += 1
         end
       end
-      if options[:update]
-        tomod.each do |item|
-          sync_update_progress("Updating item #{item[:synckey]}")
-          unless $cfg['tool.dry']
-            dest = tolocalpath(into, item)
-            download(dest, item)
-          end
+      tomod.each do |item|
+        syncdown_item(item, into, options, :update, 'Updating') do |dest, aitem|
+          download(dest, aitem)
+          num_synced += 1
         end
       end
       syncdown_after(into)
+
+      num_synced
+    end
+
+    def syncdown_item(item, into, options, action, verbage)
+      if options[action]
+        if !$cfg['tool.dry']
+          prog_msg = "#{verbage.capitalize} item #{item[:synckey]}"
+          prog_msg += " (#{item[:synctype]})" if $cfg['tool.verbose']
+          sync_update_progress(prog_msg)
+          dest = tolocalpath(into, item)
+          yield dest, item
+        else
+          say("--dry: Not #{verbage.downcase} item #{item[:synckey]}")
+        end
+      elsif $cfg['tool.verbose']
+        say("--no-#{action}: Not #{verbage.downcase} item #{item[:synckey]}")
+      end
     end
 
     ## Call external diff tool on item
     #
     # WARNING: This will download the remote item to do the diff.
     #
-    # @param item [Item] The item to get a diff of
+    # @param merged [merged] The merged item to get a diff of
+    # @local local, unadulterated (non-merged) item
     # @return [String] The diff output
-    def dodiff(item)
-      trmt = Tempfile.new([tolocalname(item, @itemkey) + '_remote_', '.lua'])
-      tlcl = Tempfile.new([tolocalname(item, @itemkey) + '_local_', '.lua'])
-      if item.key?(:script)
-        Pathname.new(tlcl.path).open('wb') do |io|
-          io << item[:script]
-        end
-      else
-        Pathname.new(tlcl.path).open('wb') do |io|
-          io << item[:local_path].read
+    def dodiff(merged, local, asdown=false)
+      trmt = Tempfile.new([tolocalname(merged, @itemkey) + '_remote_', '.lua'])
+      tlcl = Tempfile.new([tolocalname(merged, @itemkey) + '_local_', '.lua'])
+      Pathname.new(tlcl.path).open('wb') do |io|
+        if merged.key?(:script)
+          io << merged[:script]
+        else
+          # For most items, read the local file.
+          # For resources, it's a bit trickier.
+          # NOTE: This class adds a :selected key to the local item that we need
+          # to remove, since it's not part of the remote items that gets downloaded.
+          local = local.reject { |k, _v| k == :selected } unless local.nil?
+          diff_item_write(io, merged, local, nil)
         end
       end
       stdout_and_stderr = ''
       begin
-        download(Pathname.new(trmt.path), item)
+        tmp_path = Pathname.new(trmt.path)
+        diff_download(tmp_path, merged)
 
         MrMurano::Verbose.whirly_stop
 
         # 2017-07-03: No worries, Ruby 3.0 frozen string literals, cmd is a list.
         cmd = $cfg['diff.cmd'].shellsplit
-        cmd << trmt.path.gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR || ::File::SEPARATOR)
-        cmd << tlcl.path.gsub(::File::SEPARATOR, ::File::ALT_SEPARATOR || ::File::SEPARATOR)
+        remote_path = trmt.path.gsub(
+          ::File::SEPARATOR, ::File::ALT_SEPARATOR || ::File::SEPARATOR
+        )
+        local_path = tlcl.path.gsub(
+          ::File::SEPARATOR, ::File::ALT_SEPARATOR || ::File::SEPARATOR
+        )
+        if asdown
+          cmd << local_path
+          cmd << remote_path
+        else
+          cmd << remote_path
+          cmd << local_path
+        end
 
         stdout_and_stderr, _status = Open3.capture2e(*cmd)
+        # How important are the first two lines of the diff? E.g.,
+        #     --- /tmp/raw_data_remote_20170718-20183-gdyeg9.lua	2017-07-18 13:13:13.864051905 -0500
+        #     +++ /tmp/raw_data_local_20170718-20183-71o4me.lua	2017-07-18 13:13:14.520049397 -0500
+        # Seems like printing the path to a since-deleted temporary file is misleading.
+        if $cfg['diff.cmd'] == 'diff' || $cfg['diff.cmd'].start_with?('diff ')
+          lineno = 0
+          consise = stdout_and_stderr.lines.reject do |line|
+            lineno += 1
+            if lineno == 1 && line.start_with?('--- ')
+              true
+            elsif lineno == 2 && line.start_with?('+++ ')
+              true
+            else
+              false
+            end
+          end
+          stdout_and_stderr = consise.join
+        end
       ensure
         trmt.close
         trmt.unlink
@@ -797,7 +804,7 @@ module MrMurano
           item[:selected] = patterns.any? do |pattern|
             if pattern.to_s[0] == '#'
               match(item, pattern)
-            elsif item.local_path.nil?
+            elsif !defined?(item.local_path) || item.local_path.nil?
               false
             else
               item[:local_path].fnmatch(pattern)
@@ -815,14 +822,21 @@ module MrMurano
     # @param selected [Array<String>] Filters for _matcher
     # @return [Hash{Symbol=>Array<Item>}] Items grouped by the action that should be taken
     def status(options={}, selected=[])
+      options = elevate_hash(options)
+
       # 2017-07-02: Now that there are multiple solution types, and because
       # SyncRoot.add is called on different classes that go with either or
       # both products and applications, if a user only created one solution,
       # then some syncables will have their sid set to -1, because there's
       # not a corresponding solution in Murano.
-      raise 'Syncable missing sid or not valid_sid??!' unless self.sid?
+      raise 'Syncable missing sid or not valid_sid??!' unless sid?
 
-      options = elevate_hash(options)
+      if options[:asdown]
+        syncdown_before
+      else
+        syncup_before
+      end
+
       itemkey = @itemkey.to_sym
 
       # Fetch arrays of items there, and items here/local.
@@ -834,6 +848,7 @@ module MrMurano
       therebox = {}
       there.each do |item|
         item[:synckey] = synckey(item)
+        item[:synctype] = self.class.description
         therebox[item[:synckey]] = item
       end
       localbox = {}
@@ -842,6 +857,7 @@ module MrMurano
         # 2017-07-02: Check for local duplicates.
         skey += "-#{item[:dup_count]}" unless item[:dup_count].nil?
         item[:synckey] = skey
+        item[:synctype] = self.class.description
         localbox[item[:synckey]] = item
       end
       toadd = []
@@ -856,12 +872,17 @@ module MrMurano
         todel = (therebox.keys - localbox.keys).map { |key| therebox[key] }
       end
       (localbox.keys & therebox.keys).each do |key|
-        # Want here to override there except for itemkey.
-        mrg = localbox[key].reject { |k, v| k == itemkey }
-        mrg = therebox[key].merge(mrg)
+        # Want 'local' to override 'there' except for itemkey.
+        if options[:asdown]
+          mrg = therebox[key].reject { |k, _v| k == itemkey }
+          mrg = localbox[key].merge(mrg)
+        else
+          mrg = localbox[key].reject { |k, _v| k == itemkey }
+          mrg = therebox[key].merge(mrg)
+        end
         if docmp(localbox[key], therebox[key])
-          if options[:diff] and mrg[:selected]
-            mrg[:diff] = dodiff(mrg.to_h)
+          if options[:diff] && mrg[:selected]
+            mrg[:diff] = dodiff(mrg.to_h, localbox[key], options[:asdown])
             mrg[:diff] = '<Nothing changed (may be timestamp difference?)>' if mrg[:diff].empty?
           end
           tomod << mrg
@@ -873,13 +894,14 @@ module MrMurano
         { toadd: toadd, todel: todel, tomod: tomod, unchg: unchg, skipd: [] }
       else
         {
-          toadd: toadd.select { |i| i[:selected]}.map{|i| i.delete(:selected); i },
-          todel: todel.select { |i| i[:selected]}.map{|i| i.delete(:selected); i },
-          tomod: tomod.select { |i| i[:selected]}.map{|i| i.delete(:selected); i },
-          unchg: unchg.select { |i| i[:selected]}.map{|i| i.delete(:selected); i },
+          toadd: toadd.select { |i| i[:selected] }.map { |i| i.delete(:selected); i },
+          todel: todel.select { |i| i[:selected] }.map { |i| i.delete(:selected); i },
+          tomod: tomod.select { |i| i[:selected] }.map { |i| i.delete(:selected); i },
+          unchg: unchg.select { |i| i[:selected] }.map { |i| i.delete(:selected); i },
           skipd: [],
         }
       end
     end
   end
 end
+

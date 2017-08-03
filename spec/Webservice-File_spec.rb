@@ -1,4 +1,5 @@
 require 'MrMurano/version'
+require 'MrMurano/ProjectFile'
 require 'MrMurano/Webservice-File'
 require '_workspace'
 
@@ -131,7 +132,7 @@ RSpec.describe MrMurano::Webservice::File do
                         'Content-Type'=>%r{multipart/form-data; boundary=.*}},
             )
       $cfg['tool.curldebug'] = true
-      $cfg['tool']['curlfile_f'] = nil
+      $cfg.curlfile_f = nil
       saved = $stdout
       $stdout = StringIO.new
       @srv.upload(@lp, {:path=>'/one.text'}, false)

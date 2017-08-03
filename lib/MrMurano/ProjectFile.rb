@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.05 /coding: utf-8
+# Last Modified: 2017.07.25 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -109,23 +109,31 @@ module MrMurano
       @using_projectfile = false
       @using_solutionfile = false
       @prj_file = nil
-      tname = $cfg['location.base'].basename.to_s.gsub(/[^A-Za-z0-9]/, '')
       @data = PrfFile.new(
-        PrjMeta.new(
-          tname,
-          "One line summary of #{tname}",
-          "In depth description of #{tname}\n\nWith lots of details.",
-          [$cfg['user.name']],
-          '1.0.0',
-          nil,
-          nil
-        ),
+        new_meta,
         PrjFiles.new,
         PrjModules.new,
         PrjEndpoints.new,
         PrjEventHandlers.new,
         PrjResources.new,
       )
+    end
+
+    def new_meta
+      tname = $cfg['location.base'].basename.to_s.gsub(/[^A-Za-z0-9]/, '')
+      PrjMeta.new(
+        tname,
+        "One line summary of #{tname}",
+        "In depth description of #{tname}\n\nWith lots of details.",
+        [$cfg['user.name']],
+        '1.0.0',
+        nil,
+        nil
+      )
+    end
+
+    def refresh_user_name
+      @data.info = new_meta
     end
 
     # Get the current Project file

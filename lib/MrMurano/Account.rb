@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.13 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -46,14 +46,27 @@ module MrMurano
 
     # ---------------------------------------------------------------------
 
+    LOGIN_ADVICE = %(
+Please login using `murano login` or `murano init`.
+Or set your password with `murano password set <username>`.
+    ).strip
+    LOGIN_NOTICE = 'Please login.'
+
     def login_info
       warned_once = false
       if user.empty?
+        prologue = 'No Murano user account found.'
+        unless $cfg.prompt_if_logged_off
+          MrMurano::Verbose.whirly_stop
+          error("#{prologue}\n#{LOGIN_ADVICE}")
+          exit 2
+        end
         MrMurano::Verbose.whirly_pause
-        error('No Murano user account found. Please login')
+        error("#{prologue} #{LOGIN_NOTICE}")
         warned_once = true
         username = ask('User name: ')
         $cfg.set('user.name', username, :user)
+        $project.refresh_user_name
         MrMurano::Verbose.whirly_unpause
       end
       pwd_path = $cfg.file_at('passwords', :user)
@@ -61,8 +74,14 @@ module MrMurano
       pwd_file.load
       user_pass = pwd_file.get(host, user)
       if user_pass.nil?
+        prologue = "No Murano password found for #{user}."
+        unless $cfg.prompt_if_logged_off
+          MrMurano::Verbose.whirly_stop
+          error("#{prologue}\n#{LOGIN_ADVICE}")
+          exit 2
+        end
         MrMurano::Verbose.whirly_pause
-        error("No Murano password found for #{user}") unless warned_once
+        error(%(#{prologue} #{LOGIN_NOTICE}).strip) unless warned_once
         user_pass = ask('Password: ') { |q| q.echo = '*' }
         pwd_file.set(host, user, user_pass)
         pwd_file.save
@@ -139,10 +158,10 @@ module MrMurano
     # ---------------------------------------------------------------------
 
     # 2017-07-05: [lb] notes that the remaining methods are not called.
+    #   (Tilstra might be calling these via the _qb plugin.)
 
     def new_account(email, name, company='')
       # this is a kludge.  If we're gonna support this, do it better.
-      @@token = ''
       @token = ''
       post('key/', email: email, name: name, company: company, source: 'signup')
     end
@@ -153,7 +172,6 @@ module MrMurano
 
     def accept_account(token, password)
       # this is a kludge.  If we're gonna support this, do it better.
-      @@token = ''
       @token = ''
       post("key/#{token}", password: password)
     end

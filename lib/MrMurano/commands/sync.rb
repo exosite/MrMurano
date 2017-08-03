@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.02 /coding: utf-8
+# Last Modified: 2017.07.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -6,6 +6,7 @@
 #  vim:tw=0:ts=2:sw=2:et:ai
 
 require 'MrMurano/verbosing'
+require 'MrMurano/SyncRoot'
 
 def sync_add_options(c, locale)
   c.option '--[no-]delete', %(Don't delete things from #{locale})
@@ -15,13 +16,14 @@ end
 
 def syncdown_files(options, args=nil)
   args = [] if args.nil?
-  MrMurano::SyncRoot.each_filtered(options) do |_name, _type, klass, desc|
+  num_synced = 0
+  MrMurano::SyncRoot.instance.each_filtered(options) do |_name, _type, klass, desc|
     MrMurano::Verbose.whirly_msg "Syncing #{desc}..."
     sol = klass.new
-    sol.syncdown(options, args)
-    sleep 1
+    num_synced += sol.syncdown(options, args)
   end
   MrMurano::Verbose.whirly_stop
+  num_synced
 end
 
 command :syncdown do |c|
@@ -33,7 +35,7 @@ Sync project down from Murano.
   c.option '--all', 'Sync everything'
 
   # Load options to control which things to sync
-  MrMurano::SyncRoot.each_option do |s, l, d|
+  MrMurano::SyncRoot.instance.each_option do |s, l, d|
     c.option s, l, d
   end
 
@@ -60,7 +62,7 @@ Sync project up into Murano.
   c.option '--all', 'Sync everything'
 
   # Load options to control which things to sync
-  MrMurano::SyncRoot.each_option do |s, l, d|
+  MrMurano::SyncRoot.instance.each_option do |s, l, d|
     c.option s, l, d
   end
 
@@ -74,7 +76,7 @@ Sync project up into Murano.
     options.default delete: true, create: true, update: true
 
     #MrMurano::Verbose.whirly_start "Syncing solutions..."
-    MrMurano::SyncRoot.each_filtered(options.__hash__) do |_name, _type, klass, desc|
+    MrMurano::SyncRoot.instance.each_filtered(options.__hash__) do |_name, _type, klass, desc|
       MrMurano::Verbose.whirly_msg "Syncing #{desc}..."
       sol = klass.new
       sol.syncup(options, args)

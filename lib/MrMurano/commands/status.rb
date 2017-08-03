@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.05 /coding: utf-8
+# Last Modified: 2017.07.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -6,6 +6,7 @@
 #  vim:tw=0:ts=2:sw=2:et:ai
 
 require 'MrMurano/verbosing'
+require 'MrMurano/SyncRoot'
 
 command :status do |c|
   c.syntax = %(murano status [options] [filters])
@@ -32,27 +33,40 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
   c.option '--all', 'Check everything'
 
   # Load options to control which things to status
-  MrMurano::SyncRoot.each_option do |s, l, d|
+  MrMurano::SyncRoot.instance.each_option do |s, l, d|
     c.option s, l, d
   end
 
   c.option '--[no-]asdown', %(Report as if syncdown instead of syncup)
+  c.option '--[no-]asup', %(Report as if syncup instead of syncdown (default: true))
   c.option '--[no-]diff', %(For modified items, show a diff)
   c.option '--[no-]grouped', %(Group all adds, deletes, and mods together)
   c.option '--[no-]showall', %(List unchanged as well)
 
   c.action do |args, options|
-    options.default delete: true, create: true, update: true, diff: false, grouped: true
+    options.default(
+      asdown: nil,
+      asup: nil,
+      diff: false,
+      grouped: true,
+      showall: false,
+      # delete/create/update are not options the user can specify
+      # for status or diff commands; but the SyncUpDown class expects
+      # them.
+      delete: true,
+      create: true,
+      update: true,
+    )
 
     def fmtr(item)
       if item.key? :local_path
         lp = item[:local_path].relative_path_from(Pathname.pwd).to_s
-        if item.key?(:line) && item[:line] > 0
-          return "#{lp}:#{item[:line]}"
-        end
+        return "#{lp}:#{item[:line]}" if item.key?(:line) && item[:line] > 0
         lp
       else
-        item[:synckey]
+        id = item[:synckey]
+        id += " (#{item[:pp_desc]})" unless item[:pp_desc].to_s.empty? || item[:pp_desc] == item[:synckey]
+        id
       end
     end
 
@@ -97,7 +111,7 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
     end
 
     @grouped = { toadd: [], todel: [], tomod: [], unchg: [], skipd: [] }
-    def gmerge(ret, type, options)
+    def gmerge(ret, type, desc, options)
       if options.grouped
         out = @grouped
       else
@@ -108,6 +122,7 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
         ret[kind].each do |item|
           item = item.to_h
           item[:pp_type] = type
+          item[:pp_desc] = desc
           out[kind] << item
         end
       end
@@ -115,7 +130,26 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
       pretty(out, options) unless options.grouped
     end
 
-    MrMurano::SyncRoot.each_filtered(options.__hash__) do |_name, type, klass, desc|
+    # Method code starts here!
+
+    # Check that user doesn't try to asdown and asup, or no-asdown and no-asup.
+    if options.asdown.nil? && options.asup.nil?
+      options.asdown = false
+      options.asup = true
+    elsif !options.asdown.nil? && !options.asup.nil?
+      unless options.asdown ^ options.asup
+        error('Please specify either --asdown or --asup, but not both!')
+        exit 1
+      end
+    elsif options.asdown.nil?
+      options.asdown = !options.asup
+    elsif options.asup.nil?
+      options.asup = !options.asdown
+    else
+      raise('Unexpected code path.')
+    end
+
+    MrMurano::SyncRoot.instance.each_filtered(options.__hash__) do |_name, type, klass, desc|
       MrMurano::Verbose.whirly_msg "Fetching #{desc}..."
       begin
         syncable = klass.new
@@ -132,7 +166,7 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
           ret = { toadd: [], todel: [], tomod: [], unchg: [], skipd: [] }
           ret[:skipd] << { synckey: desc }
         end
-        gmerge(ret, type, options)
+        gmerge(ret, type, desc, options)
       end
     end
     MrMurano::Verbose.whirly_stop

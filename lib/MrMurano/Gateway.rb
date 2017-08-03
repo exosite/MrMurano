@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.03 /coding: utf-8
+# Last Modified: 2017.08.03 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -9,10 +9,12 @@ require 'http/form_data'
 require 'json-schema'
 require 'net/http'
 require 'uri'
+require 'MrMurano/hash'
 require 'MrMurano/http'
 require 'MrMurano/verbosing'
 require 'MrMurano/Config'
 require 'MrMurano/SolutionId'
+require 'MrMurano/SyncRoot'
 require 'MrMurano/SyncUpDown'
 
 module MrMurano
@@ -38,6 +40,7 @@ module MrMurano
       # @param path String: any additional parts for the URI
       # @return URI: The full URI for this enpoint.
       def endpoint(path='')
+        super
         parts = ['https:/', $cfg['net.host'], 'api:1'] + @uriparts
         s = parts.map(&:to_s).join('/')
         URI(s + path.to_s)
@@ -110,10 +113,15 @@ module MrMurano
     ## Working with the resources on a set of Devices. (Gateway)
     class Resources < GweBase
       include SyncUpDown
+
       def initialize
         super
         @itemkey = :alias
         @project_section = :resources
+      end
+
+      def self.description
+        %(Resources)
       end
 
       def list
@@ -140,6 +148,7 @@ module MrMurano
       end
 
       ###################################################
+
       def syncup_before
         @there = list
       end
@@ -150,31 +159,59 @@ module MrMurano
 
       def upload(_local, remote, _modify)
         @there.delete_if { |item| item[@itemkey] == remote[@itemkey] }
-        @there << remote.reject { |k, _v| k == :synckey }
+        @there << remote.reject { |k, _v| %i[synckey synctype].include? k }
       end
 
       def syncup_after
         if !@there.empty?
-          upload_all(@there)
-        else
-          error 'Nothing to sync'
+          if !$cfg['tool.dry']
+            sync_update_progress('Updating product resources')
+            upload_all(@there)
+          else
+            MrMurano::Verbose.whirly_interject do
+              say("--dry: Not updating resources")
+            end
+          end
+        elsif $cfg['tool.verbose']
+          MrMurano::Verbose.whirly_interject do
+            say('No resources changed')
+          end
         end
         @there = nil
       end
 
       ###################################################
-      def syncdown_before(_local)
+
+      def syncdown_before
         # FIXME/2017-07-02: Could there be duplicate gateway items?
         #   [lb] just added code to SyncUpDown.locallist and am curious.
         @here = locallist
       end
 
       def download(_local, item)
+        @here = locallist if @here.nil?
         # needs to append/merge with file
         @here.delete_if do |i|
           i[@itemkey] == item[@itemkey]
         end
-        @here << item.reject { |k, _v| k == :synckey }
+        @here << item.reject { |k, _v| %i[synckey synctype].include? k }
+      end
+
+      def diff_download(tmp_path, merged)
+        @there = list if @there.nil?
+        items = @there.reject { |item| item[:alias] != merged[:alias] }
+        if items.length > 1
+          error(
+            "Unexpected: more than 1 resource with the same alias: #{merged[:alias]} / #{items}"
+          )
+        end
+        Pathname.new(tmp_path).open('wb') do |io|
+          if !items.length.zero?
+            diff_item_write(io, merged, nil, items.first)
+          else
+            io << "\n"
+          end
+        end
       end
 
       def removelocal(_local, item)
@@ -186,19 +223,60 @@ module MrMurano
       end
 
       def syncdown_after(local)
-        local.open('wb') do |io|
+        resources_write(local)
+        @here = nil
+      end
+
+      def resources_write(file_path)
+        # User can blow away specs/ directory if they want; we'll just make
+        # a new one. [This code somewhat copy-paste from make_directory.]
+        basedir = file_path
+        basedir = basedir.dirname unless basedir.extname.empty?
+        raise 'Unexpected: bad basedir' if basedir.to_s.empty? || basedir == File::SEPARATOR
+
+        unless basedir.exist?
+          if $cfg['tool.dry']
+            MrMurano::Verbose.warning(
+              "--dry: Not creating default directory: #{basedir}"
+            )
+          else
+            FileUtils.mkdir_p(basedir, noop: $cfg['tool.dry'])
+          end
+        end
+
+        if $cfg['tool.dry']
+          MrMurano::Verbose.warning(
+            "--dry: Not writing resources file: #{file_path}"
+          )
+          return
+        end
+
+        file_path.open('wb') do |io|
           # convert array to hash
           res = {}
           @here.each do |value|
             key = value[:alias]
             res[key] = Hash.transform_keys_to_strings(value.reject { |k, _v| k == :alias })
           end
-          io.write res.to_yaml
+          ohash = ordered_hash(res)
+          io.write ohash.to_yaml
         end
-        @here = nil
+      end
+
+      def diff_item_write(io, _merged, local, remote)
+        raise 'Unexpected: please specify either local or remote, but not both' if local && remote
+        item = local || remote
+        raise "Unexpected: :local_path exists: #{item}" unless item[:local_path].to_s.empty?
+        res = {}
+        key = item[:alias]
+        item = item.reject { |k, _v| %i[alias synckey synctype].include? k }
+        res[key] = Hash.transform_keys_to_strings(item)
+        ohash = ordered_hash(res)
+        io << ohash.to_yaml
       end
 
       ###################################################
+
       def tolocalpath(into, _item)
         into
       end
@@ -223,7 +301,13 @@ module MrMurano
         schema_path = Pathname.new(File.dirname(__FILE__)) + 'schema/resource-v1.0.0.yaml'
         # MAYBE/2017-07-03: Do we care if user duplicates keys in the yaml? See dup_count.
         schema = YAML.load_file(schema_path.to_s)
-        JSON::Validator.validate!(schema, here)
+        begin
+          JSON::Validator.validate!(schema, here)
+        rescue JSON::Schema::ValidationError => err
+          error("There is an error in the config file, #{from}")
+          error(%("#{err.message}"))
+          exit 1
+        end
 
         res = []
         here.each_pair do |key, value|
@@ -236,7 +320,11 @@ module MrMurano
         item_a != item_b
       end
     end
-    SyncRoot.add('resources', Resources, 'T', %(Resources))
+    # 2017-07-18: Against OneP, fetching --resources is expensive, so this
+    # call was ignored bydefault (you'd have to add --resources to syncup,
+    # syncdown, diff, and status commands). Against Murano, this call seems
+    # normal speed, so including by default.
+    SyncRoot.instance.add('resources', Resources, 'T', true)
 
     ##############################################################################
     ##
@@ -292,7 +380,10 @@ module MrMurano
         else
           opts = {}
         end
-        put("/#{CGI.escape(id.to_s)}", opts)
+        whirly_start('Enabling Device...')
+        putted = put("/#{CGI.escape(id.to_s)}", opts)
+        whirly_stop
+        putted
       end
       alias whitelist enable
       alias create enable
@@ -315,7 +406,9 @@ module MrMurano
         req.content_type = form.content_type
         req.content_length = form.content_length
         req.body = form.to_s
+        whirly_start('Enabling Devices...')
         workit(req)
+        whirly_stop
         nil
       end
 
@@ -332,6 +425,7 @@ module MrMurano
       # @param identifier [String] Who to activate.
       def activate(identifier)
         info = GweBase.new.info
+        raise "Gateway info not found for #{identifier}" if info.nil?
         fqdn = info[:fqdn]
         debug "Found FQDN: #{fqdn}"
         fqdn = "#{@sid}.m2.exosite.io" if fqdn.nil?
@@ -350,10 +444,17 @@ module MrMurano
         request['Authorization'] = nil
         request.content_type = 'application/x-www-form-urlencoded; charset=utf-8'
         curldebug(request)
+
+        whirly_start('Activating Device...')
         response = http.request(request)
+        whirly_stop
+
         case response
         when Net::HTTPSuccess
           return response.body
+        when Net::HTTPConflict
+          error('The specified device is already activated.')
+          exit 1
         else
           showHttpError(request, response)
         end

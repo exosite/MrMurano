@@ -42,8 +42,8 @@
 
 # Devices
 - Add a real device: `murano product device enable 42:42:42:42:42:42`
-- !!!cheet and activate by hand: `murano product device activate 42:42:42:42:42:42`
-- Which resources are there? `murano product spec pull`
+- !!!cheat and activate by hand: `murano product device activate 42:42:42:42:42:42`
+- Which resources are there? `murano pull --resources && cat specs/resources.yaml`
 - What did the device write to that one resource?
   `murano product device read 42:42:42:42:42:42 update_interval`
 - `murano product device write 42:42:42:42:42:42 update_interval 300`

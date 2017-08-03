@@ -45,3 +45,6 @@ Gemfile.lock
 
 .rake_tasks~
 
+# Output from .trustme.vim and .trustme.sh
+.rake_build.out
+

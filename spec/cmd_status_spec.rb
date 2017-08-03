@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.14 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: probably not yet
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -39,8 +39,13 @@ RSpec.describe 'murano status', :cmd, :needs_password do
     out, err, status = Open3.capture3(
       capcmd('murano', 'syncdown', '--eventhandlers', '--no-delete', '--no-update')
     )
+    # E.g.,
+    #  "Adding item timer_timer\nAdding item tsdb_exportJob\nAdding item user_account\n"
+    olines = out.lines
+    expect(olines[0]).to a_string_starting_with("Adding item ")
+    expect(olines[1]).to a_string_starting_with("Adding item ")
+    expect(olines[2]).to a_string_starting_with("Adding item ")
     expect(err).to eq('')
-    expect(out).to eq('')
     expect(status.exitstatus).to eq(0)
   end
 
@@ -67,6 +72,15 @@ RSpec.describe 'murano status', :cmd, :needs_password do
         a_string_matching(/ \+ S  .*files\/js\/script\.js/),
         a_string_matching(/ \+ S  .*files\/icon\.png/),
         a_string_matching(/ \+ S  .*files\/index\.html/),
+      )
+  end
+
+  def match_syncable_contents_resources(slice)
+      expect(slice).to include(
+        a_string_matching(/ \+ T  state \(Resources\)/),
+        a_string_matching(/ \+ T  temperature \(Resources\)/),
+        a_string_matching(/ \+ T  uptime \(Resources\)/),
+        a_string_matching(/ \+ T  humidity \(Resources\)/),
       )
   end
 
@@ -108,9 +122,9 @@ RSpec.describe 'murano status', :cmd, :needs_password do
       #" - E  interface_updateGatewaySettings\n",
       #" - E  interface_updateIdentity\n",
       #" - E  interface_uploadContent\n",
-      " - E  timer_timer\n",
-      " - E  tsdb_exportJob\n",
-      " - E  user_account\n",
+      " - E  timer_timer (Application Event Handlers)\n",
+      " - E  tsdb_exportJob (Application Event Handlers)\n",
+      " - E  user_account (Application Event Handlers)\n",
     )
   end
 
@@ -134,26 +148,29 @@ RSpec.describe 'murano status', :cmd, :needs_password do
       olines = out.lines
       expect(olines[0]).to eq("Only on local machine:\n")
       match_syncable_contents(olines[1..8])
-      #expect(olines[9]).to eq("Only on remote server:\n")
-      expect(olines[9]).to eq("Nothing new remotely\n")
+      match_syncable_contents_resources(olines[9..12])
+      #expect(olines[13]).to eq("Only on remote server:\n")
+      expect(olines[13]).to eq("Nothing new remotely\n")
       # FIMXE/2017-06-23: We should DRY this long list which is same in each test.
       # FIXME/2017-06-23: The interfaces the server creates for a new project
       #   will problem vary depending on what modules are loaded, and are likely
       #   to change over time...
-      #match_remote_boilerplate_v1_0_0_service(olines[10..31])
+      #match_remote_boilerplate_v1_0_0_service(olines[14..35])
 
       # NOTE: On Windows, touch doesn't work, so items differ.
       # Check the platform, e.g., "linux-gnu", or other.
-      is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
-      if is_windows
-        expect(olines[10]).to eq("Items that differ:\n")
-        expect(olines[11..12]).to contain_exactly(
-          a_string_matching(/ M E  .*services\/timer_timer\.lua/),
-          a_string_matching(/ M E  .*services\/tsdb_exportJob\.lua/),
-        )
-      else
-        expect(olines[10]).to eq("Nothing that differs\n")
-      end
+      # 2017-07-14 08:51: Is there a race condition here? [lb] saw
+      # differences earlier, but then not after adding this...
+      #is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
+      #if is_windows
+      #  expect(olines[14]).to eq("Items that differ:\n")
+      #  expect(olines[15..16]).to contain_exactly(
+      #    a_string_matching(/ M E  .*services\/timer_timer\.lua/),
+      #    a_string_matching(/ M E  .*services\/tsdb_exportJob\.lua/),
+      #  )
+      #else
+        expect(olines[14]).to eq("Nothing that differs\n")
+      #end
 
       expect(status.exitstatus).to eq(0)
     end
@@ -204,19 +221,20 @@ RSpec.describe 'murano status', :cmd, :needs_password do
       olines = out.lines
       expect(olines[0]).to eq("Only on local machine:\n")
       match_syncable_contents(olines[1..8])
-      expect(olines[9]).to eq("Nothing new remotely\n")
+      match_syncable_contents_resources(olines[9..12])
+      expect(olines[13]).to eq("Nothing new remotely\n")
 
       # NOTE: On Windows, touch doesn't work, so items differ.
       # Check the platform, e.g., "linux-gnu", or other.
       is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
       if is_windows
-        expect(olines[10]).to eq("Items that differ:\n")
-        expect(olines[11..12]).to include(
+        expect(olines[14]).to eq("Items that differ:\n")
+        expect(olines[15..16]).to include(
           a_string_matching(/ M E  .*services\/timer_timer\.lua/),
           a_string_matching(/ M E  .*services\/tsdb_exportJob\.lua/),
         )
       else
-        expect(olines[10]).to eq("Nothing that differs\n")
+        expect(olines[14]).to eq("Nothing that differs\n")
       end
 
       expect(status.exitstatus).to eq(0)
@@ -255,9 +273,10 @@ RSpec.describe 'murano status', :cmd, :needs_password do
       olines = out.lines
       expect(olines[0]).to eq("Only on local machine:\n")
       match_syncable_contents_except_singleRoute(olines[1..7])
-      expect(olines[8]).to eq("Only on remote server:\n")
-      match_remote_boilerplate_v1_0_0_service(olines[9..11])
-      expect(olines[12]).to eq("Nothing that differs\n")
+      match_syncable_contents_resources(olines[8..11])
+      expect(olines[12]).to eq("Only on remote server:\n")
+      match_remote_boilerplate_v1_0_0_service(olines[13..15])
+      expect(olines[16]).to eq("Nothing that differs\n")
       #expect(olines[11]).to eq("Items that differ:\n")
       #expect(olines[12..12]).to contain_exactly(
       #  a_string_matching(/ M E  .*services\/devdata\.lua/),
@@ -302,14 +321,16 @@ RSpec.describe 'murano status', :cmd, :needs_password do
       olines = out.lines
       expect(olines[0]).to eq("Only on local machine:\n")
       match_syncable_contents_except_singleRoute(olines[1..7])
-      expect(olines[8]).to eq("Only on remote server:\n")
-      match_remote_boilerplate_v1_0_0_service(olines[9..11])
-      expect(olines[12]).to eq("Nothing that differs\n")
-      #expect(olines[11]).to eq("Items that differ:\n")
-      #expect(olines[12..12]).to contain_exactly(
+      match_syncable_contents_resources(olines[8..11])
+      expect(olines[12]).to eq("Only on remote server:\n")
+      match_remote_boilerplate_v1_0_0_service(olines[13..15])
+      expect(olines[16]).to eq("Nothing that differs\n")
+      #expect(olines[15]).to eq("Items that differ:\n")
+      #expect(olines[16..16]).to contain_exactly(
       #  a_string_matching(/ M E  .*services\/devdata\.lua/),
       #)
       expect(status.exitstatus).to eq(0)
     end
   end
 end
+

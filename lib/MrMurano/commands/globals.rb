@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.02 /coding: utf-8
+# Last Modified: 2017.07.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -85,7 +85,10 @@ global_option('--business-id ID', String, %(ID of Murano Business to use)) do |b
   $cfg['business.mark'] = nil
 end
 
-global_option('--application APPLICATION', String, %(Name or ID of Application to use)) do |application_mark|
+global_option('--application[=APPLICATION]', String, %(Name or ID of Application to use)) do |application_mark|
+  # NOTE: If user does not specify an argument,
+  #         e.g., `murano domain --application`,
+  #       then this block *is not* called.
   $cfg['application.id'] = nil
   $cfg['application.name'] = nil
   $cfg['application.mark'] = application_mark
@@ -101,7 +104,7 @@ global_option('--application-id ID', String, %(ID of Application to use)) do |ap
   $cfg['application.mark'] = nil
 end
 
-global_option('--product PRODUCT', String, %(Name or ID of Product to use)) do |product_mark|
+global_option('--product[=PRODUCT]', String, %(Name or ID of Product to use)) do |product_mark|
   $cfg['product.id'] = nil
   $cfg['product.name'] = nil
   $cfg['product.mark'] = product_mark

@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.13 /coding: utf-8
+# Last Modified: 2017.08.02 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -20,7 +20,7 @@ module MrMurano
       @whirly_time = nil
       @whirly_users = 0
       @whirly_cols = 0
-      @whirly_paused = false
+      @whirly_pauses = 0
     end
 
     EXO_QUADRANTS = [
@@ -33,7 +33,11 @@ module MrMurano
     ].freeze
 
     def whirly_start(msg)
-      say msg if $cfg['tool.verbose']
+      if $cfg['tool.verbose']
+        whirly_pause if @whirly_users > 0
+        say msg
+        whirly_unpause if @whirly_users > 0
+      end
       return if $cfg['tool.no-progress']
       # Count the number of calls to whirly_start, so that the
       # first call to whirly_start is the message that gets
@@ -53,9 +57,19 @@ module MrMurano
         spinner: EXO_QUADRANTS,
         status: @whirly_msg,
         append_newline: false,
+        #remove_after_stop: false,
+        #stream: $stderr,
       )
       @whirly_time = Time.now
-      @whirly_cols, _rows = HighLine::SystemExtensions.terminal_size
+      # The whitespace we add ends up getting picked up if you copy
+      # from the terminal. [lb] not sure if we can fix that... but
+      # we can at least minimize the amount of it to the longest
+      # message, rather than the terminal column width.
+      #@whirly_cols, _rows = HighLine::SystemExtensions.terminal_size
+      # Note that Whirly adds '...', so add its length, too.
+      # rubocop:disable Performance/FixedSize
+      #   Do not compute the size of statically sized objects.
+      @whirly_cols = @whirly_msg.length + '...'.length
     end
 
     def whirly_stop(force: false)
@@ -92,21 +106,32 @@ module MrMurano
       else
         @whirly_msg = msg
         #self.whirly_linger
+        # Clear the line.
+        Whirly.configure(status: ' ' * @whirly_cols)
         Whirly.configure(status: @whirly_msg)
+        @whirly_cols = @whirly_msg.length + '...'.length
       end
     end
 
     def whirly_pause
-      return if @whirly_paused
+      @whirly_pauses += 1
+      return if @whirly_pauses > 1
       return if @whirly_users.zero?
-      @whirly_paused = true
       whirly_clear
     end
 
     def whirly_unpause
-      return if !@whirly_paused
-      @whirly_paused = false
+      @whirly_pauses -= 1
+      raise 'Whirly unpaused once too many' if @whirly_pauses < 0
+      return unless @whirly_pauses == 0
+      return if @whirly_users.zero?
       whirly_show
+    end
+
+    def whirly_interject
+      whirly_pause
+      yield
+      whirly_unpause
     end
   end
 end

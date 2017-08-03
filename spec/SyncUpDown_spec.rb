@@ -1,6 +1,8 @@
-require 'MrMurano/version'
 require 'MrMurano/verbosing'
+require 'MrMurano/version'
 require 'MrMurano/Config'
+require 'MrMurano/ProjectFile'
+require 'MrMurano/SyncRoot'
 require 'MrMurano/SyncUpDown'
 require '_workspace'
 
@@ -24,6 +26,9 @@ class TSUD
   end
   def fetch(id)
   end
+  def self.description
+    %(Time Series Database)
+  end
 end
 
 RSpec::Matchers.define :pathname_globs do |glob|
@@ -37,7 +42,7 @@ ITEM_UPDATED_AT="2017-06-24T00:45:15.564Z"
 RSpec.describe MrMurano::SyncUpDown do
   include_context "WORKSPACE"
   before(:example) do
-    MrMurano::SyncRoot.reset
+    MrMurano::SyncRoot.instance.reset
     $cfg = MrMurano::Config.new
     $cfg.load
     $project = MrMurano::ProjectFile.new
@@ -73,7 +78,22 @@ RSpec.describe MrMurano::SyncUpDown do
       ret = t.status
       expect(ret).to eq({
         :toadd=>[],
-        :todel=>[{:name=>1, :synckey=>1}, {:name=>2, :synckey=>2}, {:name=>3, :synckey=>3}],
+        :todel=>[
+          {
+            :name=>1,
+            :synckey=>1,
+            :synctype=>TSUD.description,
+          },
+          {
+            :name=>2,
+            :synckey=>2,
+            :synctype=>TSUD.description,
+          },
+          {
+            :name=>3,
+            :synckey=>3,
+            :synctype=>TSUD.description,
+          }],
         :tomod=>[],
         :unchg=>[],
         :skipd=>[],
@@ -88,11 +108,15 @@ RSpec.describe MrMurano::SyncUpDown do
       ])
       ret = t.status({:asdown=>true})
       expect(ret).to eq({
-        :todel=>[],
-        :toadd=>[{:name=>1, :synckey=>1}, {:name=>2, :synckey=>2}, {:name=>3, :synckey=>3}],
-        :tomod=>[],
-        :unchg=>[],
-        :skipd=>[],
+        todel: [],
+        toadd: [
+          { name: 1, synckey: 1, synctype: TSUD.description },
+          { name: 2, synckey: 2, synctype: TSUD.description },
+          { name: 3, synckey: 3, synctype: TSUD.description },
+        ],
+        tomod: [],
+        unchg: [],
+        skipd: [],
       })
     end
 
@@ -106,16 +130,24 @@ RSpec.describe MrMurano::SyncUpDown do
       )
       ret = t.status
       expect(ret).to match({
-        :toadd=>[
-          {:name=>'one.lua', :synckey=>'one.lua',
-           :local_path=>an_instance_of(Pathname)},
-          {:name=>'two.lua', :synckey=>'two.lua',
-           :local_path=>an_instance_of(Pathname)},
+        toadd: [
+          {
+            name: 'one.lua',
+            synckey: 'one.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
+          {
+            name: 'two.lua',
+            synckey: 'two.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
         ],
-        :todel=>[],
-        :tomod=>[],
-        :unchg=>[],
-        :skipd=>[],
+        todel: [],
+        tomod: [],
+        unchg: [],
+        skipd: [],
       })
     end
 
@@ -132,16 +164,24 @@ RSpec.describe MrMurano::SyncUpDown do
       )
       ret = t.status
       expect(ret).to match({
-        :tomod=>[
-          {:name=>'one.lua', :synckey=>'one.lua',
-           :local_path=>an_instance_of(Pathname)},
-          {:name=>'two.lua', :synckey=>'two.lua',
-           :local_path=>an_instance_of(Pathname)},
+        tomod: [
+          {
+            name: 'one.lua',
+            synckey: 'one.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
+          {
+            name: 'two.lua',
+            synckey: 'two.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
         ],
-        :todel=>[],
-        :toadd=>[],
-        :unchg=>[],
-        :skipd=>[],
+        todel: [],
+        toadd: [],
+        unchg: [],
+        skipd: [],
       })
     end
     it "finds things here and there; but they're the same" do
@@ -158,16 +198,24 @@ RSpec.describe MrMurano::SyncUpDown do
       expect(t).to receive(:docmp).twice.and_return(false)
       ret = t.status
       expect(ret).to match({
-        :unchg=>[
-          {:name=>'one.lua', :synckey=>'one.lua',
-           :local_path=>an_instance_of(Pathname)},
-          {:name=>'two.lua', :synckey=>'two.lua',
-           :local_path=>an_instance_of(Pathname)},
+        unchg: [
+          {
+            name: 'one.lua',
+            synckey: 'one.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
+          {
+            name: 'two.lua',
+            synckey: 'two.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+          },
         ],
-        :todel=>[],
-        :toadd=>[],
-        :tomod=>[],
-        :skipd=>[],
+        todel: [],
+        toadd: [],
+        tomod: [],
+        skipd: [],
       })
     end
 
@@ -184,15 +232,19 @@ RSpec.describe MrMurano::SyncUpDown do
       expect(t).to receive(:dodiff).once.and_return("diffed output")
       ret = t.status({:diff=>true})
       expect(ret).to match({
-        :tomod=>[
-          {:name=>'one.lua', :synckey=>'one.lua',
-           :local_path=>an_instance_of(Pathname),
-           :diff=>"diffed output"},
+        tomod: [
+          {
+            name: 'one.lua',
+            synckey: 'one.lua',
+            synctype: TSUD.description,
+            local_path: an_instance_of(Pathname),
+            diff: "diffed output",
+          },
         ],
-        :todel=>[],
-        :toadd=>[],
-        :unchg=>[],
-        :skipd=>[],
+        todel: [],
+        toadd: [],
+        unchg: [],
+        skipd: [],
       })
     end
 
@@ -244,26 +296,66 @@ RSpec.describe MrMurano::SyncUpDown do
         ret = @t.status
         expect(ret).to match({
           :unchg=>[
-            have_attributes({:name=>'three.lua', :synckey=>'three.lua',
-             :local_path=> pathname_globs('**/three.lua')}),
-            have_attributes({:name=>'four.lua', :synckey=>'four.lua',
-             :local_path=>pathname_globs('**/four.lua')}),
+            have_attributes(
+              {
+                :name=>'three.lua',
+                :synckey=>'three.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/three.lua'),
+              }),
+            have_attributes(
+              {
+                :name=>'four.lua',
+                :synckey=>'four.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/four.lua'),
+              }),
           ],
           :toadd=>[
-            have_attributes({:name=>'five.lua', :synckey=>'five.lua',
-             :local_path=>pathname_globs('**/five.lua')}),
-            have_attributes({:name=>'six.lua', :synckey=>'six.lua',
-             :local_path=>pathname_globs('**/six.lua')}),
+            have_attributes(
+              {
+                :name=>'five.lua',
+                :synckey=>'five.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/five.lua'),
+              }),
+            have_attributes(
+              {
+                :name=>'six.lua',
+                :synckey=>'six.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/six.lua'),
+              }),
           ],
           :todel=>[
-            have_attributes({:name=>'seven.lua', :synckey=>'seven.lua'}),
-            have_attributes({:name=>'eight.lua', :synckey=>'eight.lua'}),
+            have_attributes(
+              {
+                :name=>'seven.lua',
+                :synckey=>'seven.lua',
+                :synctype=>TSUD.description,
+              }),
+            have_attributes(
+              {
+                :name=>'eight.lua',
+                :synckey=>'eight.lua',
+                :synctype=>TSUD.description,
+              }),
           ],
           :tomod=>[
-            have_attributes({:name=>'one.lua', :synckey=>'one.lua',
-             :local_path=>pathname_globs('**/one.lua')}),
-            have_attributes({:name=>'two.lua', :synckey=>'two.lua',
-             :local_path=>pathname_globs('**/two.lua')}),
+            have_attributes(
+              {
+                :name=>'one.lua',
+                :synckey=>'one.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/one.lua'),
+              }),
+            have_attributes(
+              {
+                :name=>'two.lua',
+                :synckey=>'two.lua',
+                :synctype=>TSUD.description,
+                :local_path=>pathname_globs('**/two.lua'),
+              }),
           ],
           :skipd=>[],
         })
@@ -274,13 +366,21 @@ RSpec.describe MrMurano::SyncUpDown do
         expect(ret).to match({
           :unchg=>[ ],
           :toadd=>[
-            have_attributes(:name=>'six.lua', :synckey=>'six.lua',
-             :local_path=>an_instance_of(Pathname)),
+            have_attributes(
+              :name=>'six.lua',
+              :synckey=>'six.lua',
+              :synctype=>TSUD.description,
+              :local_path=>an_instance_of(Pathname)
+            ),
           ],
           :todel=>[ ],
           :tomod=>[
-            have_attributes(:name=>'two.lua', :synckey=>'two.lua',
-             :local_path=>an_instance_of(Pathname)),
+            have_attributes(
+              :name=>'two.lua',
+              :synckey=>'two.lua',
+              :synctype=>TSUD.description,
+              :local_path=>an_instance_of(Pathname)
+            ),
           ],
           :skipd=>[],
         })
@@ -301,26 +401,66 @@ RSpec.describe MrMurano::SyncUpDown do
         ret = @t.status({:unselected=>true})
         expect(ret).to match({
           :unchg=>[
-            have_attributes(:name=>'three.lua', :synckey=>'three.lua', :selected=>true,
-                            :local_path=> pathname_globs('**/three.lua')),
-          have_attributes(:name=>'four.lua', :synckey=>'four.lua', :selected=>true,
-                          :local_path=>pathname_globs('**/four.lua')),
+            have_attributes(
+              :name=>'three.lua',
+              :synckey=>'three.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/three.lua')
+            ),
+            have_attributes(
+              :name=>'four.lua',
+              :synckey=>'four.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/four.lua')
+              ),
           ],
           :toadd=>[
-            have_attributes(:name=>'five.lua', :synckey=>'five.lua', :selected=>true,
-                            :local_path=>pathname_globs('**/five.lua')),
-          have_attributes(:name=>'six.lua', :synckey=>'six.lua', :selected=>true,
-                          :local_path=>pathname_globs('**/six.lua')),
+            have_attributes(
+              :name=>'five.lua',
+              :synckey=>'five.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/five.lua')
+            ),
+            have_attributes(
+              :name=>'six.lua',
+              :synckey=>'six.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/six.lua')
+            ),
           ],
           :todel=>[
-            have_attributes(:name=>'seven.lua', :selected=>true, :synckey=>'seven.lua'),
-            have_attributes(:name=>'eight.lua', :selected=>true, :synckey=>'eight.lua'),
+            have_attributes(
+              :name=>'seven.lua',
+              :selected=>true,
+              :synckey=>'seven.lua',
+              :synctype=>TSUD.description,
+            ),
+            have_attributes(
+              :name=>'eight.lua',
+              :selected=>true,
+              :synckey=>'eight.lua',
+              :synctype=>TSUD.description,
+            ),
           ],
           :tomod=>[
-            have_attributes(:name=>'one.lua', :synckey=>'one.lua', :selected=>true,
-                            :local_path=>pathname_globs('**/one.lua')),
-          have_attributes(:name=>'two.lua', :synckey=>'two.lua', :selected=>true,
-                          :local_path=>pathname_globs('**/two.lua')),
+            have_attributes(
+              :name=>'one.lua',
+              :synckey=>'one.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/one.lua')
+            ),
+            have_attributes(
+              :name=>'two.lua',
+              :synckey=>'two.lua',
+              :synctype=>TSUD.description,
+              :selected=>true,
+              :local_path=>pathname_globs('**/two.lua')
+            ),
           ],
           :skipd=>[],
         })
@@ -389,7 +529,10 @@ RSpec.describe MrMurano::SyncUpDown do
 
     it "nothing when same." do
       expect(@t).to receive(:fetch).and_yield(%{-- fake lua\nreturn 0\n})
-      ret = @t.dodiff({:name=>'one.lua', :local_path=>@scpt, :updated_at=>ITEM_UPDATED_AT})
+      ret = @t.dodiff(
+        { name: 'one.lua', local_path: @scpt, updated_at: ITEM_UPDATED_AT},
+        nil
+      )
       if Gem.win_platform? then
         expect(ret).to match(/FC: no differences encountered/)
       else
@@ -399,14 +542,20 @@ RSpec.describe MrMurano::SyncUpDown do
 
     it "something when different." do
       expect(@t).to receive(:fetch).and_yield(%{-- fake lua\nreturn 2\n})
-      ret = @t.dodiff({:name=>'one.lua', :local_path=>@scpt, :updated_at=>ITEM_UPDATED_AT})
+      ret = @t.dodiff(
+        {name: 'one.lua', local_path: @scpt, updated_at: ITEM_UPDATED_AT},
+        nil
+      )
       expect(ret).not_to eq('')
     end
 
     it "uses script in item" do
       script = %{-- fake lua\nreturn 2\n}
       expect(@t).to receive(:fetch).and_yield(script)
-      ret = @t.dodiff({:name=>'one.lua', :local_path=>@scpt, :script=>script, :updated_at=>ITEM_UPDATED_AT})
+      ret = @t.dodiff(
+        {name: 'one.lua', local_path: @scpt, script: script, updated_at: ITEM_UPDATED_AT},
+        nil
+      )
       if Gem.win_platform? then
         expect(ret).to match(/FC: no differences encountered/)
       else
@@ -445,7 +594,9 @@ RSpec.describe MrMurano::SyncUpDown do
         MrMurano::SyncUpDown::Item.new({:name=>'two.lua', :updated_at=>ITEM_UPDATED_AT})
       ])
 
-      expect(@t).to receive(:upload).twice.with(kind_of(Pathname), kind_of(MrMurano::SyncUpDown::Item), true)
+      expect(@t).to receive(:upload).twice.with(
+        kind_of(Pathname), kind_of(MrMurano::SyncUpDown::Item), true
+      )
       expect(@t).to receive(:to_remote_item).and_return(
         {:name=>'one.lua'},{:name=>'two.lua'}
       )

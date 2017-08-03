@@ -1,13 +1,21 @@
+# Last Modified: 2017.07.26 /coding: utf-8
+# frozen_string_literal: true
+
+# Copyright © 2016-2017 Exosite LLC.
+# License: MIT. See LICENSE.txt.
+#  vim:tw=0:ts=2:sw=2:et:ai
+
 require 'MrMurano/verbosing'
 
 module MrMurano
   class Hooked
     include Verbose
-    attr :section
 
     def initialize(section)
       @section = section
     end
+
+    attr_reader :section
 
     def check_run_pre_hook
       prehook = $cfg["#{section}.pre-hook"]
@@ -24,25 +32,36 @@ module MrMurano
       verbose "calling post-hook: #{posthook}"
       system(posthook)
     end
-
   end
 end
 
 module Commander
   class Command
+    # A command sets project_not_required if it
+    # can run from without a project directory.
     attr_accessor :project_not_required
+    # A command sets restrict_to_cur_dir if it
+    # should not climb the directory hierarchy
+    # in search of a .murano/config file.
+    attr_accessor :restrict_to_cur_dir
+    # A command sets prompt_if_logged_off if it
+    # is okay to ask the user for their password.
+    attr_accessor :prompt_if_logged_off
 
-    def verify_arg_count!(args, max_args=0)
+    def verify_arg_count!(args, max_args=0, mandatory=[])
       if max_args.zero?
         if args.count > 0
           MrMurano::Verbose.error('Not expecting any arguments')
           exit 2
         end
-      else
-        if args.count > max_args
-          MrMurano::Verbose.error("Not expecting more than #{max_args} arguments")
-          exit 2
+      elsif args.count > max_args
+        MrMurano::Verbose.error("Not expecting more than #{max_args} arguments")
+        exit 2
+      elsif args.count < mandatory.length
+        (args.count..(mandatory.length - 1)).to_a.each do |ix|
+          MrMurano::Verbose.error(mandatory[ix])
         end
+        exit 2
       end
     end
   end
@@ -52,11 +71,9 @@ module Commander
 
     # run_active_command is called by commander-rb's at_exit hook.
     # We override -- monkey patch -- it to do other stuff.
-    alias :old_run_active_command :run_active_command
+    alias old_run_active_command run_active_command
     def run_active_command
-      if @command_exit
-        exit @command_exit
-      end
+      exit @command_exit if @command_exit
       section = active_command.name
       hooked = MrMurano::Hooked.new(section)
       hooked.check_run_pre_hook
@@ -68,24 +85,35 @@ module Commander
         MrMurano::Verbose.whirly_stop
         MrMurano::Verbose.error err.message
         exit 1
-      rescue LocalJumpError => err
+      rescue LocalJumpError => _err
         # This happens when you `return` from a command, since
         # commands are blocks, and returning from a block would
         # really mean returning from the thing running the block,
         # which would be bad. So Ruby barfs instead.
         return
-      rescue StandardError => err
+      rescue StandardError => _err
         raise
       end
 
       hooked.check_run_post_hook
     end
 
-    alias :old_parse_global_options :parse_global_options
+    alias old_parse_global_options parse_global_options
     def parse_global_options
-      defopts = ($cfg["#{active_command.name}.options"] or '').split
-      @args.push( *defopts )
-      old_parse_global_options
+      defopts = ($cfg["#{active_command.name}.options"] || '').split
+      @args.push(*defopts)
+      begin
+        old_parse_global_options
+      rescue OptionParser::MissingArgument => err
+        if err.message.start_with?('missing argument:')
+          puts err.message
+        else
+          MrMurano::Verbose.error(
+            "There was a problem interpreting the options: ‘#{err.message}’"
+          )
+        end
+        exit 2
+      end
     end
 
     # Weird. --help doesn't work if other flags also specified.
@@ -107,4 +135,3 @@ module Commander
   end
 end
 
-#  vim: set ai et sw=2 ts=2 :

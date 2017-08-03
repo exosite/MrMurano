@@ -1,4 +1,4 @@
-# Last Modified: 2017.07.13 /coding: utf-8
+# Last Modified: 2017.08.02 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -9,9 +9,13 @@ require 'highline'
 require 'inifile'
 require 'pathname'
 require 'rainbow'
+require 'MrMurano/verbosing'
+require 'MrMurano/SyncRoot'
 
 module MrMurano
   class Config
+    include Verbose
+
     # Config scopes:
     #  :internal    transient this-run-only things (also -c options)
     #  :specified   from --configfile
@@ -33,7 +37,6 @@ module MrMurano
         self[:path] = Pathname.new(path) unless path.is_a? Pathname
         self[:data] = IniFile.new(filename: path.to_s) if self[:data].nil?
         self[:data].restore
-        init_curl_file
       end
 
       def write
@@ -42,7 +45,7 @@ module MrMurano
         if defined?($cfg) && !$cfg.nil? && $cfg['tool.dry']
           # $cfg.nil? when run from spec tests that don't load it with:
           #   include_context "CI_CMD"
-          MrMurano::Config.warning('--dry: Not writing config file')
+          MrMurano::Verbose.warning('--dry: Not writing config file')
           return
         end
         self[:path] = Pathname.new(path) unless path.is_a?(Pathname)
@@ -55,27 +58,13 @@ module MrMurano
         self[:data].save
         path.chmod(0o600)
       end
-
-      # To capture curl calls when running rspec, write to a file.
-      def init_curl_file
-        if self[:data]['tool']['curldebug'] && !self[:data]['tool']['curlfile'].to_s.strip.empty?
-          if self[:data]['tool']['curlfile_f'].nil?
-            self[:data]['tool']['curlfile_f'] = File.open(self[:data]['tool']['curlfile'], 'a')
-            # MEH: Call $cfg['tool.curlfile_f'].close() at some point? Or let Ruby do on exit.
-            self[:data]['tool']['curlfile_f'] << Time.now.to_s + "\n"
-            self[:data]['tool']['curlfile_f'] << "murano #{ARGV.join(' ')}\n"
-            self[:data]['tool']['curlfile_f'].flush
-          end
-        elsif !self[:data]['tool']['curlfile_f'].nil?
-          self[:data]['tool']['curlfile_f'].close
-          self[:data]['tool']['curlfile_f'] = nil
-        end
-      end
     end
 
     attr_reader :paths
     attr_reader :projectDir
     attr_reader :project_exists
+    attr_writer :exclude_scopes
+    attr_accessor :curlfile_f
 
     CFG_ENV_NAME = %(MURANO_CONFIGFILE)
     CFG_FILE_NAME = %(.murano/config)
@@ -87,27 +76,11 @@ module MrMurano
 
     CFG_SOLUTION_ID_KEYS = %w[application.id product.id].freeze
 
-    def self.warning(msg)
-      $stderr.puts HighLine.color(msg, :yellow)
-    end
-
-    def warning(msg)
-      MrMurano::Config.warning(msg)
-    end
-
-    def self.error(msg)
-      $stderr.puts HighLine.color(msg, :red)
-    end
-
-    def error(msg)
-      MrMurano::Config.error(msg)
-    end
-
     def migrate_old_env
       return if ENV[CFG_OLD_ENV_NAME].nil?
       warning %(ENV "#{CFG_OLD_ENV_NAME}" is no longer supported. Rename it to "#{CFG_ENV_NAME}")
       unless ENV[CFG_ENV_NAME].nil?
-        error %(Both "#{CFG_ENV_NAME}" and "#{CFG_OLD_ENV_NAME}" defined, please remove "#{CFG_OLD_ENV_NAME}".)
+        warning %(Both "#{CFG_ENV_NAME}" and "#{CFG_OLD_ENV_NAME}" defined, please remove "#{CFG_OLD_ENV_NAME}".)
       end
       ENV[CFG_ENV_NAME] = ENV[CFG_OLD_ENV_NAME]
     end
@@ -128,7 +101,10 @@ module MrMurano
       end
     end
 
-    def initialize
+    def initialize(cmd_runner=nil)
+      @runner = cmd_runner
+      @curlfile_f = nil
+
       @paths = []
       @paths << ConfigFile.new(:internal, nil, IniFile.new)
       # :specified --configfile FILE goes here. (see load_specific)
@@ -142,13 +118,17 @@ module MrMurano
       end
 
       @project_dir, @project_exists = find_project_dir
-      migrate_old_config(@project_dir)
+      # For murano init, do not use parent config file as project config.
+      if !@runner.nil? && @runner.active_command.restrict_to_cur_dir
+        pwd = Pathname.new(Dir.pwd).realpath
+        if @project_dir != pwd
+          @project_dir = pwd
+          @project_exists = false
+        end
+      end
       @paths << ConfigFile.new(:project, @project_dir + CFG_FILE_NAME)
-      # We'll create the CFG_DIR_NAME on write().
 
-      migrate_old_config(Pathname.new(Dir.home))
       @paths << ConfigFile.new(:user, Pathname.new(Dir.home) + CFG_FILE_NAME)
-      # We'll create the CFG_DIR_NAME on write().
 
       @paths << ConfigFile.new(:defaults, nil, IniFile.new)
 
@@ -175,7 +155,7 @@ module MrMurano
       set('location.resources', 'specs/resources.yaml', :defaults)
       set('location.cors', 'cors.yaml', :defaults)
 
-      set('sync.bydefault', SyncRoot.bydefault.join(' '), :defaults) if defined? SyncRoot
+      set('sync.bydefault', SyncRoot.instance.bydefault.join(' '), :defaults) if defined? SyncRoot
 
       set('files.default_page', 'index.html', :defaults)
       set('files.searchFor', '**/*', :defaults)
@@ -234,6 +214,35 @@ module MrMurano
     end
     private :find_project_dir
 
+    def prompt_if_logged_off
+      # MAYBE/2017-07-31: [lb] likes the idea of only prompting for the
+      # password for certain commands (e.g., `murano login` and `murano init`),
+      # but this might break a user's experience if they don't want to store
+      # their password in ~/.murano but instead always want to be prompted.
+      #!@runner.nil? && @runner.active_command.prompt_if_logged_off
+      # Disabling for now...
+      true
+    end
+
+    def validate_cmd
+      # Most commands should be run from within a Murano project (sub-)directory.
+      # If user is running a project command not within a project directory,
+      # we'll print a message now and exit the app from run_active_command later.
+      unless @runner.nil?
+        the_cmd = @runner.active_command
+        unless the_cmd.name == 'help' || the_cmd.project_not_required || @project_exists
+          error %(The "#{the_cmd.name}" command only works in a Murano project.)
+          say %(Please change to a project directory, or run `murano init` to create a new project.)
+          # Note that commnander-rb uses an at_exit hook, which we hack around.
+          @runner.command_exit = 1
+          return
+        end
+      end
+
+      migrate_old_config(@project_dir)
+      migrate_old_config(Pathname.new(Dir.home))
+    end
+
     def self.fix_modes(path)
       if path.directory?
         path.chmod(0o700)
@@ -268,6 +277,8 @@ module MrMurano
     def load
       # - read/write config file in [Project, User, System] (all are optional)
       @paths.each(&:load)
+      # If user wants curl commands dumped to a file, open that file.
+      init_curl_file
     end
 
     ## Load specified file into the config stack
@@ -337,10 +348,6 @@ module MrMurano
       set(key, value, :internal)
     end
 
-    def exclude_scopes=(skip_scopes)
-      @exclude_scopes = skip_scopes
-    end
-
     ## Dump out a combined config
     def dump
       # have a fake, merge all into it, then dump it.
@@ -383,6 +390,12 @@ module MrMurano
           skip_content = false
           if scope == :env
             locats += "Use the environment variable, MURANO_CONFIGFILE, to specify this config file.\n"
+            locats += "\n"
+            if ENV['MURANO_PASSWORD'].to_s.empty?
+              locats += "The MURANO_PASSWORD environ is not set.\n"
+            else
+              locats += "The MURANO_PASSWORD environ is set and will be used.\n"
+            end
             skip_content = !cfg.path.exist?
           end
           next if skip_content
@@ -413,6 +426,22 @@ module MrMurano
         end
       end
       locats
+    end
+
+    # To capture curl calls when running rspec, write to a file.
+    def init_curl_file
+      if self['tool.curldebug'] && !self['tool.curlfile'].to_s.strip.empty?
+        if @curlfile_f.nil?
+          @curlfile_f = File.open(self['tool.curlfile'], 'a')
+          # MEH: Call @curlfile_f.close() at some point? Or let Ruby do on exit.
+          @curlfile_f << Time.now.to_s + "\n"
+          @curlfile_f << "murano #{ARGV.join(' ')}\n"
+          @curlfile_f.flush
+        end
+      elsif !@curlfile_f.nil?
+        @curlfile_f.close
+        @curlfile_f = nil
+      end
     end
   end
 
