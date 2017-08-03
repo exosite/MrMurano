@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.03 /coding: utf-8
+# Last Modified: 2017.07.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -126,7 +126,6 @@ Or set your password with `murano password set <username>`.
       else
         showHttpError(request, response)
         error 'Check to see if username and password are correct.'
-        error "request.body: #{request.body}"
         @token = nil
       end
     end
