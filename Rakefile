@@ -32,7 +32,7 @@ end
 
 desc 'display remind of how to release'
 task :release_reminder do
-  puts <<~EOR
+  reminder = %(
     git flow release start <newversion>
     gvim lib/MrMurano/version.rb
     git commit -a -m 'version bump'
@@ -41,7 +41,8 @@ task :release_reminder do
     #rake git:all
     # Wait for all tests to complete.
     # if all passed: rake gemit
-  EOR
+  ).lines.map(&:strip).join("\n")
+  puts reminder
 end
 
 desc 'Prints a cmd to test this in another directory'
