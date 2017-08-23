@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Last Modified: 2017.08.23 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -16,16 +16,17 @@ Gem::Specification.new do |s|
   s.license     = 'MIT'
   s.homepage    = 'https://github.com/exosite/MuranoCLI'
   s.summary     = 'Do more from the command line with Murano'
-  s.description = %(Do more from the command line with Murano
+  s.description = %(
+Do more from the command line with Murano.
 
-  Push and pull data from Murano.
-  Get status on what things have changed.
-  See a diff of the changes before you push.
+Push and pull data from Murano.
+Get status on what things have changed.
+See a diff of the changes before you push.
 
-  and so much more.
+And so much more.
 
-  This gem was formerly known as MrMurano.
-)
+(This gem was formerly known as MrMurano.)
+  ).strip
   s.required_ruby_version = '~> 2.0'
 
   # FIXME: 2017-05-25: Remove this message eventually.
