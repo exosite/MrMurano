@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Last Modified: 2017.09.13 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -18,6 +18,26 @@ Get the CORS for the project.
 Set the CORS with `murano cors set`.
   ).strip
   c.project_not_required = true
+
+  c.example %(
+    Output CORS parameters in an ASCII table.
+  ).strip, 'murano cors'
+
+  c.example %(
+    Output CORS parameters as JSON.
+  ).strip, 'murano cors --json'
+
+  c.example %(
+    Output CORS parameters in Yaml.
+  ).strip, 'murano cors --yaml'
+
+  c.example %(
+    Output CORS parameters as comma-separated values.
+  ).strip, 'murano cors --csv'
+
+  c.example %(
+    Output CORS parameters pretty-printed as a Ruby Hash.
+  ).strip, 'murano cors --pp'
 
   c.action do |args, _options|
     c.verify_arg_count!(args)
