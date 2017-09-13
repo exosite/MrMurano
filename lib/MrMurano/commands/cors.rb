@@ -43,7 +43,14 @@ Set the CORS with `murano cors set`.
     c.verify_arg_count!(args)
     sol = MrMurano::Webservice::Cors.new
     ret = sol.fetch
-    sol.outf ret
+    sol.outf(ret) do |obj, ios|
+      # Called if tool.outformat is 'best' or 'csv' (not 'json', 'yaml', or 'pp').
+      headers = obj.keys.sort
+      row = []
+      headers.each { |key| row << obj[key] }
+      rows = [row]
+      sol.tabularize({ headers: headers, rows: rows }, ios)
+    end
   end
 end
 
