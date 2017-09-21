@@ -154,7 +154,6 @@ Or set your password with `murano password set <username>`.
       MrMurano::Verbose.whirly_start('Logging in...')
       post('token/', creds) do |request, http|
         http.request(request) do |response|
-
           reply = JSON.parse(response.body, json_opts)
           if response.is_a?(Net::HTTPSuccess)
             @token = reply[:token]
@@ -221,9 +220,10 @@ Or set your password with `murano password set <username>`.
       # First, delete/invalidate the remote token.
       unless twoftoken.to_s.empty?
         @suppress_error = true
-        resp = delete('token/' + twoftoken)
-        # resp is nil if token not recognized, else it's {}. We don't really
-        # care, since we're going to forget our copy of the token, anyway.
+        delete('token/' + twoftoken)
+        # The response is nil if the token was not recognized, otherwise it's
+        # {}. We don't really care, since we're going to forget our copy of
+        # the token, anyway.
         @suppress_error = false
       end
 
@@ -246,14 +246,13 @@ Or set your password with `murano password set <username>`.
       user_net_host = $cfg.get('net.host', :user)
       user_net_host = $cfg.get('net.host', :defaults) if user_net_host.nil?
       user_user_name = $cfg.get('user.name', :user)
-      if (user_net_host == net_host) && (user_user_name == user_name)
-        # Only clear user name from the user config if the net.host
-        # or user.name did not come from a different config, like the
-        # --project config.
-        $cfg.set('user.name', nil, :user)
-        $cfg.set('business.id', nil, :user)
-        $cfg.set('business.name', nil, :user)
-      end
+      # Only clear user name from the user config if the net.host
+      # or user.name did not come from a different config, like the
+      # --project config.
+      return unless (user_net_host == net_host) && (user_user_name == user_name)
+      $cfg.set('user.name', nil, :user)
+      $cfg.set('business.id', nil, :user)
+      $cfg.set('business.name', nil, :user)
     end
 
     def verify_set(cfg_key)
