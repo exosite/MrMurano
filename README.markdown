@@ -1,10 +1,5 @@
 # Murano Command Line Interface (CLI)
 
-[![Gem
-Version](https://badge.fury.io/rb/MuranoCLI.svg)](https://badge.fury.io/rb/MuranoCLI)
-[![Build Status](https://travis-ci.org/exosite/MuranoCLI.svg?branch=master)](https://travis-ci.org/exosite/MuranoCLI)
-[![Inline docs](http://inch-ci.org/github/exosite/MuranoCLI.svg?branch=master)](http://inch-ci.org/github/exosite/MuranoCLI)
-
 Do more from the command line with [Murano](https://exosite.com/platform/).
 
 MuranoCLI interacts with Murano and makes different tasks easier.

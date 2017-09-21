@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Last Modified: 2017.09.13 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -19,11 +19,38 @@ Set the CORS with `murano cors set`.
   ).strip
   c.project_not_required = true
 
+  c.example %(
+    Output CORS parameters in an ASCII table.
+  ).strip, 'murano cors'
+
+  c.example %(
+    Output CORS parameters as JSON.
+  ).strip, 'murano cors --json'
+
+  c.example %(
+    Output CORS parameters in Yaml.
+  ).strip, 'murano cors --yaml'
+
+  c.example %(
+    Output CORS parameters as comma-separated values.
+  ).strip, 'murano cors --csv'
+
+  c.example %(
+    Output CORS parameters pretty-printed as a Ruby Hash.
+  ).strip, 'murano cors --pp'
+
   c.action do |args, _options|
     c.verify_arg_count!(args)
     sol = MrMurano::Webservice::Cors.new
     ret = sol.fetch
-    sol.outf ret
+    sol.outf(ret) do |obj, ios|
+      # Called if tool.outformat is 'best' or 'csv' (not 'json', 'yaml', or 'pp').
+      headers = obj.keys.sort
+      row = []
+      headers.each { |key| row << obj[key] }
+      rows = [row]
+      sol.tabularize({ headers: headers, rows: rows }, ios)
+    end
   end
 end
 
