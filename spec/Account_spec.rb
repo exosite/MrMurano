@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Last Modified: 2017.09.21 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -45,6 +45,7 @@ RSpec.describe MrMurano::Account, 'token' do
     it 'Asks for nothing' do
       $cfg['user.name'] = 'bob'
       expect(@pswd).to receive(:get).once.and_return('built')
+      expect(@pswd).to receive(:lookup).once.and_return(nil)
 
       ret = @acc.login_info
       expect(ret).to eq(email: 'bob', password: 'built')
@@ -56,6 +57,7 @@ RSpec.describe MrMurano::Account, 'token' do
       expect(@acc).to receive(:error).once
       expect($cfg).to receive(:set).with('user.name', 'bob', :user).once.and_call_original
       expect(@pswd).to receive(:get).once.and_return('built')
+      expect(@pswd).to receive(:lookup).once.and_return(nil)
 
       ret = @acc.login_info
       expect(ret).to eq(email: 'bob', password: 'built')
@@ -67,6 +69,7 @@ RSpec.describe MrMurano::Account, 'token' do
       expect(@acc).to receive(:error).once
       expect($terminal).to receive(:ask).once.and_return('dog')
       expect(@pswd).to receive(:set).once.with('bizapi.hosted.exosite.io', 'bob', 'dog')
+      expect(@pswd).to receive(:set).once.with('bizapi.hosted.exosite.io', 'bob/twofactor', nil)
       # 2017-07-31: login_info may exit unless the command okays prompting for the password.
       #   (If we don't set this, login_info exits, which we'd want to
       #   catch with
