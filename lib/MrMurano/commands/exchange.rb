@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.31 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -169,7 +169,7 @@ def cmd_exchange_header_and_elems(elems, options)
       # Calculate the width of each column except the last (:description).
       headers[0..-2].each do |key|
         elem_with_max = elems.max { |a, b| a.send(key).length <=> b.send(key).length }
-        width_taken += elem_with_max.send(key).length
+        width_taken += elem_with_max.send(key).length unless elem_with_max.nil?
         width_taken += ' | '.length
       end
       width_taken += ' | '.length
