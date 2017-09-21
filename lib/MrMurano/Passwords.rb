@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.23 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -69,6 +69,10 @@ module MrMurano
         ).strip
         return ENV['MR_PASSWORD']
       end
+      lookup(host, user)
+    end
+
+    def lookup(host, user)
       return nil unless @data.is_a?(Hash)
       return nil unless @data.key?(host)
       return nil unless @data[host].is_a?(Hash)

@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.22 /coding: utf-8
+# Last Modified: 2017.09.21 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -55,6 +55,7 @@ Or set your password with `murano password set <username>`.
 
     def login_info
       warned_once = false
+
       if user.empty?
         prologue = 'No Murano user account found.'
         unless $cfg.prompt_if_logged_off
@@ -70,9 +71,8 @@ Or set your password with `murano password set <username>`.
         $project.refresh_user_name
         MrMurano::Verbose.whirly_unpause
       end
-      pwd_path = $cfg.file_at('passwords', :user)
-      pwd_file = MrMurano::Passwords.new(pwd_path)
-      pwd_file.load
+
+      pwd_file = pwd_file_load
       user_pass = pwd_file.get(host, user)
       if user_pass.nil?
         prologue = "No Murano password found for #{user}."
@@ -85,19 +85,42 @@ Or set your password with `murano password set <username>`.
         error(%(#{prologue} #{LOGIN_NOTICE}).strip) unless warned_once
         user_pass = ask('Password: ') { |q| q.echo = '*' }
         pwd_file.set(host, user, user_pass)
+        pwd_file.set(host, user + '/twofactor', nil)
         pwd_file.save
         MrMurano::Verbose.whirly_unpause
+      else
+        @twofactor_token = token_twofactor_lookup(pwd_file)
       end
-      creds = {
+
+      {
         email: user,
         password: user_pass,
       }
-      creds
+    end
+
+    def pwd_file_load
+      pwd_path = $cfg.file_at('passwords', :user)
+      pwd_file = MrMurano::Passwords.new(pwd_path)
+      pwd_file.load
+      pwd_file
+    end
+
+    def token_twofactor_lookup(pwd_file)
+      twoftoken = pwd_file.lookup(host, user + '/twofactor')
+      if twoftoken.to_s.empty?
+        nil
+      elsif twoftoken !~ /^[a-fA-F0-9]+$/
+        warning "Malformed twofactor token: #{twoftoken}"
+        nil
+      else
+        twoftoken
+      end
     end
 
     # ---------------------------------------------------------------------
 
     def token
+      return '' if defined?(@logging_on) && @logging_on
       token_fetch if @token.to_s.empty?
       @token
     end
@@ -107,32 +130,140 @@ Or set your password with `murano password set <username>`.
     end
 
     def token_fetch
-      # Cannot have token call token, so cannot use Http::workit.
-      uri = endpoint('token/')
-      request = Net::HTTP::Post.new(uri)
-      request['User-Agent'] = "MrMurano/#{MrMurano::VERSION}"
-      request.content_type = 'application/json'
-      curldebug(request)
-      #request.basic_auth(username(), password())
-      request.body = JSON.generate(login_info)
+      @logging_on = true
+      creds = login_info
+      @token = nil
+
+      # If 2fa token found, verify it works.
+      unless @twofactor_token.nil?
+        get('token/' + @twofactor_token) do |request, http|
+          http.request(request) do |response|
+            if response.is_a?(Net::HTTPSuccess)
+              # response.body is, e.g., "{\"email\":\"xxx@yyy.zzz\",\"ttl\":172800}"
+              @token = @twofactor_token
+            end
+          end
+        end
+        unless @token.nil?
+          @logging_on = false
+          return
+        end
+        @twofactor_token = nil
+      end
 
       MrMurano::Verbose.whirly_start('Logging in...')
-      response = http.request(request)
+      post('token/', creds) do |request, http|
+        http.request(request) do |response|
+
+          reply = JSON.parse(response.body, json_opts)
+          if response.is_a?(Net::HTTPSuccess)
+            @token = reply[:token]
+          elsif response.is_a?(Net::HTTPConflict) && reply[:message] == 'twofactor'
+            MrMurano::Verbose.whirly_interject do
+              # Prompt user for emailed code.
+              token_twofactor_fetch(creds)
+            end
+          else
+            showHttpError(request, response)
+            error 'Check to see if username and password are correct.'
+            unless ENV['MURANO_PASSWORD'].to_s.empty?
+              pwd_path = $cfg.file_at('passwords', :user)
+              warning "NOTE: MURANO_PASSWORD specifies the password; it was not read from #{pwd_path}"
+            end
+          end
+        end
+      end
+      MrMurano::Verbose.whirly_stop
+      @logging_on = false
+    end
+
+    def token_twofactor_fetch(creds)
+      error 'Two-factor Authentication'
+      warning 'A verification code has been sent to your email.'
+      code = ask('Please enter the code here to continue: ').strip
+      unless code =~ /^[a-fA-F0-9]+$/
+        error 'Expected token to contain only numbers and hexadecimal letters.'
+        exit 1
+      end
+      MrMurano::Verbose.whirly_start('Verifying code...')
+
+      path = 'key/' + code
+
+      response = get(path)
+      # Response is, e.g., {
+      #   purpose: "twofactor",
+      #   status: "exists",
+      #   email: "xxx@yyy.zzz",
+      #   bizid: null,
+      #   businessName: null, }
+      return if response.nil?
+
+      response = post(path, password: creds[:password])
+      # Response is, e.g., { "token": "..." }
+      return if response.nil?
+
+      @twofactor_token = response[:token]
+      pwd_file = pwd_file_load
+      pwd_file.set(host, user + '/twofactor', @twofactor_token)
+      pwd_file.save
+      @token = @twofactor_token
       MrMurano::Verbose.whirly_stop
 
-      case response
-      when Net::HTTPSuccess
-        token = JSON.parse(response.body, json_opts)
-        @token = token[:token]
-      else
-        showHttpError(request, response)
-        error 'Check to see if username and password are correct.'
-        unless ENV['MURANO_PASSWORD'].to_s.empty?
-          pwd_path = $cfg.file_at('passwords', :user)
-          warning "NOTE: MURANO_PASSWORD specifies the password; it was not read from #{pwd_path}"
-        end
-        @token = nil
+      warning 'Please run `murano logout --token` to clear your two-factor token when finished.'
+    end
+
+    def logout(token_delete_only)
+      @logging_on = true
+
+      pwd_file = pwd_file_load
+      twoftoken = token_twofactor_lookup(pwd_file)
+
+      # First, delete/invalidate the remote token.
+      unless twoftoken.to_s.empty?
+        @suppress_error = true
+        resp = delete('token/' + twoftoken)
+        # resp is nil if token not recognized, else it's {}. We don't really
+        # care, since we're going to forget our copy of the token, anyway.
+        @suppress_error = false
       end
+
+      net_host = verify_set('net.host')
+      user_name = verify_set('user.name')
+      if net_host && user_name
+        pwd_file = MrMurano::Passwords.new
+        pwd_file.load
+        pwd_file.remove(net_host, user_name) unless token_delete_only
+        pwd_file.remove(net_host, user_name + '/twofactor')
+        pwd_file.save
+      end
+
+      clear_from_config(net_host, user_name) unless token_delete_only
+
+      @logging_on = false
+    end
+
+    def clear_from_config(net_host, user_name)
+      user_net_host = $cfg.get('net.host', :user)
+      user_net_host = $cfg.get('net.host', :defaults) if user_net_host.nil?
+      user_user_name = $cfg.get('user.name', :user)
+      if (user_net_host == net_host) && (user_user_name == user_name)
+        # Only clear user name from the user config if the net.host
+        # or user.name did not come from a different config, like the
+        # --project config.
+        $cfg.set('user.name', nil, :user)
+        $cfg.set('business.id', nil, :user)
+        $cfg.set('business.name', nil, :user)
+      end
+    end
+
+    def verify_set(cfg_key)
+      cfg_val = $cfg.get(cfg_key)
+      if cfg_val.to_s.empty?
+        cfg_val = nil
+        cfg_key_q = MrMurano::Verbose.fancy_ticks(cfg_key)
+        MrMurano::Verbose.warning("No config key #{cfg_key_q}: no password to delete")
+      end
+      cfg_val
     end
 
     # ---------------------------------------------------------------------
