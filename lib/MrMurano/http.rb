@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.24 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -108,7 +108,7 @@ module MrMurano
       # 2017-08-14: MrMurano::Account overrides the token method, and
       # it doesn't exit if no token, and then we end up here.
       ensure_token! token
-      request['Authorization'] = 'token ' + token
+      request['Authorization'] = 'token ' + token unless token.to_s.empty?
       request['User-Agent'] = "MrMurano/#{MrMurano::VERSION}"
       request
     end
