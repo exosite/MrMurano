@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.13 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -10,6 +10,14 @@ require 'MrMurano/version'
 require 'MrMurano/Content'
 require 'MrMurano/SyncRoot'
 require '_workspace'
+
+# rubocop:disable Style/HashSyntax
+# - 'Use the new Ruby 1.9 hash syntax.'
+#   E.g.,
+#     :'x-amz-meta-name' => 'Solutionfile.json',
+#   because quoted string keys, e.g.,
+#     'x-amz-meta-name': 'Solutionfile.json',
+#   are not supported in Ruby 2.0.
 
 RSpec.describe MrMurano::Content::Base do
   include_context 'WORKSPACE'
