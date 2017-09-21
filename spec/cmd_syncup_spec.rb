@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -82,7 +82,7 @@ RSpec.describe 'murano syncup', :cmd, :needs_password do
       # Windows is insane:
       #   "Adding item ........................Administrator.AppData.Local.Temp.2.d20170913-3860-pgji6g.project.modules.table_util\n"
       #expect(outl[5]).to eq("Adding item table_util\n")
-      expect(outl[5]).to start_with("Adding item ")
+      expect(outl[5]).to start_with('Adding item ')
       expect(outl[5]).to end_with("table_util\n")
       #expect(outl[6]).to eq("Updating item c3juj9vnmec000000_event\n")
       # The order isn't always consistent, so just do start_with.
