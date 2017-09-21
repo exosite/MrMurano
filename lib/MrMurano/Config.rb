@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.31 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -301,7 +301,7 @@ module MrMurano
         if the_cmd.name != 'help' && !the_cmd.project_not_required && !@project_exists
           error %(The "#{the_cmd.name}" command only works in a Murano project.)
           say INVALID_PROJECT_HINT
-          # Note that commnander-rb uses an at_exit hook, which we hack around.
+          # Note that commander-rb uses an at_exit hook, which we hack around.
           @runner.command_exit = 1
           false
         end
