@@ -62,6 +62,7 @@ Element status:
     cmd_defaults_id_and_name(options)
 
     xchg = MrMurano::Exchange.new
+    xchg.must_business_id!
 
     elems, available, purchased = find_elements(xchg, options, args[0])
     if options.added.nil?
@@ -233,6 +234,7 @@ Add an Exchange Element to your Business.
     cmd_defaults_id_and_name(options)
 
     xchg = MrMurano::Exchange.new
+    xchg.must_business_id!
 
     # If the user specifies filter_id, we could try to fetch that Element
     # directly (e.g., by calling exchange/<bizId>/element/<elemId>),
