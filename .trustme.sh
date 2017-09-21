@@ -1,5 +1,5 @@
 #!/bin/bash
-# Last Modified: 2017.08.16
+# Last Modified: 2017.09.20
 # vim:tw=0:ts=2:sw=2:et:norl:spell
 
 # WHAT: A Continuous Integration (CI) script for kicking the build
@@ -170,6 +170,19 @@ function rspec_it() {
 # especially if your tests use the same
 # business as you do when developing.
 #rspec_it
+
+function ctags_it() {
+  annoucement "CTAGS IT"
+  ctags -R \
+    --exclude=coverage \
+    --exclude=docs \
+    --exclude=pkg \
+    --exclude=report \
+    --exclude=spec \
+    --verbose=yes
+  /bin/ls -la tags >> ${OUT_FILE}
+}
+ctags_it
 
 time_n=$(date +%s.%N)
 time_elapsed=$(echo "$time_n - $time_0" | bc -l)

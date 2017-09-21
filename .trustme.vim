@@ -23,6 +23,8 @@
 "  autocmd BufWritePost <buffer> silent !./.trustme.sh &
 "augroup END
 
+autocmd BufRead *.rb set tags=/exo/clients/exosite/exosite-murcli/tags
+
 "echomsg 'Calling trustme.sh'
 silent !./.trustme.sh &
 

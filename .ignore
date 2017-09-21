@@ -7,10 +7,12 @@ report/
 .rspec_examples.txt
 Gemfile.lock
 .bundle/
+tags
 
 # 2017-05-12: Testing!
 *.out
 .rake_build.out
+curldebug.out
 
 rspec-*.html
 *.rspec.html
