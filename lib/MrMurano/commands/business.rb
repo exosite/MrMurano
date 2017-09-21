@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -20,6 +20,16 @@ command :business do |c|
   c.summary = %(About business)
   c.description = %(
 Commands for working with businesses.
+
+If you need to set the business ID, try some of the following:
+
+- Get a list of Business IDs:       #{MrMurano::EXE_NAME} business list
+
+- Specify the ID explictly:         #{MrMurano::EXE_NAME} <cmd> --config business.id=<ID>
+  Add the ID to a project config:   #{MrMurano::EXE_NAME} config business.id <ID>
+  Add the ID to the user config:    #{MrMurano::EXE_NAME} config business.id <ID> --user
+  Setup a project interactively:    #{MrMurano::EXE_NAME} init
+
   ).strip
   c.project_not_required = true
   c.subcmdgrouphelp = true
