@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -109,12 +109,7 @@ module MrMurano
 
     def self.missing_business_id_msg
       %(
-Missing Business ID.
-Call `#{MrMurano::EXE_NAME} business list` to get a list of business IDs.
-Set the ID temporarily using --config business.id=<ID>
-or add to the project config using \`#{MrMurano::EXE_NAME} config business.id <ID>\`
-or add to the user config using \`#{MrMurano::EXE_NAME} config business.id <ID> --user\`
-or set it interactively using \`#{MrMurano::EXE_NAME} init\`
+business ID not specified. For hints: #{MrMurano::EXE_NAME} business --help
       ).strip
     end
 
