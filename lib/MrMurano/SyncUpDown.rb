@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Last Modified: 2017.09.21 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -665,6 +665,8 @@ module MrMurano
     # @param options [Hash, Commander::Command::Options] Options on operation
     # @param selected [Array<String>] Filters for _matcher
     def syncup(options={}, selected=[])
+      return 0 unless api_id?
+
       options = elevate_hash(options)
       options[:asdown] = false
 
@@ -727,6 +729,8 @@ module MrMurano
     # @param options [Hash, Commander::Command::Options] Options on operation
     # @param selected [Array<String>] Filters for _matcher
     def syncdown(options={}, selected=[])
+      return 0 unless api_id?
+
       options = elevate_hash(options)
       options[:asdown] = true
       options[:skip_missing_warning] = true
