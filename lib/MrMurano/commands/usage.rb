@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Last Modified: 2017.09.20 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -10,15 +10,16 @@ require 'MrMurano/Solution'
 
 command :usage do |c|
   c.syntax = %(murano usage)
-  c.summary = %(Get usage info for solution(s))
+  c.summary = %(Get usage info for the Application and Product)
   c.description = %(
-Get usage info for solution(s).
+Get usage info for the Application and Product.
   ).strip
+  c.project_not_required = true
 
   # Add flag: --type [application|product|all].
   cmd_add_solntype_pickers(c)
 
-  c.option '--[no-]all', 'Show usage for all Solutions in Business, not just Project'
+  c.option '--[no-]all', 'Show usage for all Solutions in Business'
   c.option(
     '--[no-]header', %(Output solution descriptions (default: true))
   )
