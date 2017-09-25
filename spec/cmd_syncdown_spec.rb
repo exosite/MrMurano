@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Last Modified: 2017.09.25 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -15,14 +15,18 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
 
   before(:example) do
     @product_name = rname('syncdownTestPrd')
-    out, err, status = Open3.capture3(capcmd('murano', 'product', 'create', @product_name, '--save'))
+    out, err, status = Open3.capture3(
+      capcmd('murano', 'product', 'create', @product_name, '--save')
+    )
     expect(err).to eq('')
     soln_id = out
     expect(soln_id.chomp).to match(/^[a-zA-Z0-9]+$/)
     expect(status.exitstatus).to eq(0)
 
     @applctn_name = rname('syncdownTestApp')
-    out, err, status = Open3.capture3(capcmd('murano', 'application', 'create', @applctn_name, '--save'))
+    out, err, status = Open3.capture3(
+      capcmd('murano', 'application', 'create', @applctn_name, '--save')
+    )
     expect(err).to eq('')
     soln_id = out
     expect(soln_id.chomp).to match(/^[a-zA-Z0-9]+$/)
@@ -31,7 +35,9 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
     out, err, status = Open3.capture3(capcmd('murano', 'assign', 'set'))
     #expect(out).to a_string_starting_with("Linked product #{@product_name}")
     olines = out.lines
-    expect(strip_fancy(olines[0])).to eq("Linked '#{@product_name}' to '#{@applctn_name}'\n")
+    expect(strip_fancy(olines[0])).to eq(
+      "Linked '#{@product_name}' to '#{@applctn_name}'\n"
+    )
     expect(olines[1]).to eq("Created default event handler\n")
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
@@ -40,12 +46,16 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
   after(:example) do
     # VERIFY/2017-07-03: Skipping assign unset. Murano will clean up, right?
 
-    out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', '-y', @applctn_name))
+    out, err, status = Open3.capture3(
+      capcmd('murano', 'solution', 'delete', '-y', @applctn_name)
+    )
     expect(out).to eq('')
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
 
-    out, err, status = Open3.capture3(capcmd('murano', 'solution', 'delete', '--yes', @product_name))
+    out, err, status = Open3.capture3(
+      capcmd('murano', 'solution', 'delete', '--yes', @product_name)
+    )
     expect(out).to eq('')
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
@@ -56,8 +66,10 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
       FileUtils.cp_r(File.join(@testdir, 'spec/fixtures/syncable_content/.'), '.')
       FileUtils.move('assets', 'files')
       #FileUtils.mkpath('specs')
-      #FileUtils.copy(File.join(@testdir, 'spec/fixtures/product_spec_files/lightbulb.yaml'),
-      #  'specs/resources.yaml')
+      #FileUtils.copy(
+      #  File.join(@testdir, 'spec/fixtures/product_spec_files/lightbulb.yaml'),
+      #  'specs/resources.yaml'
+      #)
       # 2017-07-03: So long as this command does not syncdown first, these
       # two files -- that conflict in name with what's on the platform --
       # won't be a problem (but would be if we synceddown first).
@@ -143,7 +155,8 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
         'routes/api-fire-{code}.put.lua',
         'routes/api-fire.post.lua',
         'routes/api-onfire.get.lua',
-        # 2017-07-03: services/ would not exist if we did not include fixtures/syncable_conflict/.
+        # 2017-07-03: services/ would not exist if we did not include
+        #   fixtures/syncable_conflict/.
         'services',
         # 2017-07-13: No longer syncing device2_event; is internal to platform.
         #'services/device2_event.lua',
