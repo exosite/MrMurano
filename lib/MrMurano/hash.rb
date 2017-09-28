@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.07 /coding: utf-8
+# Last Modified: 2017.09.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -113,7 +113,7 @@ module HashInit
     hash.first.each do |key, val|
       if respond_to? key
         send("#{key}=", val)
-      else
+      elsif defined?(@show_errors) && @show_errors
         $stderr.puts %(HashInit: missing hash key "#{key}")
       end
     end

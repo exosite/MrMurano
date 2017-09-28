@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.31 /coding: utf-8
+# Last Modified: 2017.09.27 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -50,14 +50,23 @@ module MrMurano
       lookp = {}
       # Get the user's Business metadata, including their Business tier.
       overview if @ometa.nil?
+      elems = fetch_elements(lookp)
+      fetch_purchased(lookp)
+      prepare_elements(elems, **opts)
+    end
+
+    def fetch_elements(lookp)
       # Fetch the list of Elements, including Added, Available, and Upgradeable.
       items = fetch_type('/element/')
       # Prepare a lookup of the Elements.
-      elems = items.map do |meta|
+      items.map do |meta|
         elem = MrMurano::ExchangeElement.new(meta)
         lookp[elem.elementId] = elem
         elem
       end
+    end
+
+    def fetch_purchased(lookp)
       # Fetch the list of Purchased elements.
       items = fetch_type('/purchase/')
       # Update the list of all Elements to indicate which have been purchased.
@@ -67,8 +76,8 @@ module MrMurano
           elem.purchaseId = meta[:purchaseId]
           # Sanity check.
           meta[:element].each do |key, val|
-            next if elem.send(key) == val
-            warning(
+            next if verify_purchase_vs_element(elem, key, val)
+            verbose(
               'Unexpected: Exchange Purchase element meta differs: ' \
               "key: #{key} / elem: #{elem.send(key)} / purchase: #{val}"
             )
@@ -77,7 +86,13 @@ module MrMurano
           warning("Unexpected: No Element found for Exchange Purchase: elementId: #{meta[:elementId]}")
         end
       end
-      prepare_elements(elems, **opts)
+    end
+
+    def verify_purchase_vs_element(elem, key, val)
+      elem.send(key) == val
+    rescue NoMethodError
+      verbose("Unexpected: Exchange Element missing key found in Purchase Element: #{key}")
+      true
     end
 
     def prepare_elements(elems, filter_id: nil, filter_name: nil, filter_fuzzy: nil)
