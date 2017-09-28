@@ -24,7 +24,21 @@ module MrMurano
     end
 
     def fetch_type(part)
-      whirly_start('Fetching Elements...')
+      # [lb] not super happy about mixing presentation with other logic
+      # but this is quick and dirty.
+      case part
+      when '/element/'
+        qualifier = 'All'
+      when '/purchase/'
+        qualifier = 'Purchased'
+      else
+        raise 'Unexpected error'
+      end
+      whirly_start("Fetching #{qualifier} Elements...")
+
+      # FIXME/2017-09-27: Support Pagination. BizAPI accepts four settings:
+      #                     type, offset, limit, and select.
+      #                   <bizapi>/lib/api/route/exchange/schemas/element.js
       ret = get('exchange/' + bid + part) do |request, http|
         response = http.request(request)
         case response
