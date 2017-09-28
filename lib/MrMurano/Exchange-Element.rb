@@ -131,6 +131,7 @@ module MrMurano
     }.freeze
 
     def initialize(*hash)
+      @show_errors = $cfg['tool.verbose']
       hash = [hash] unless hash.is_a? Array
       camel_cased = {}
       hash.first.each do |key, val|
