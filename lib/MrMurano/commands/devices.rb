@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.23 /coding: utf-8
+# Last Modified: 2017.10.04 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -239,7 +239,7 @@ Enables Identifiers, creating devices, or digital shadows, in Murano.
 
     unless options.auth.nil?
       options.auth = options.auth.to_sym
-      unless MrMurano::Gateway::Device.DEVICE_AUTH_TYPES.include?(options.auth)
+      unless MrMurano::Gateway::Device::DEVICE_AUTH_TYPES.include?(options.auth)
         MrMurano::Verbose.error("unrecognized --auth: #{options.auth}")
         exit 1
       end
