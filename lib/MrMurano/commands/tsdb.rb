@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Last Modified: 2017.10.05 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -156,11 +156,7 @@ Also, many date-time formats can be parsed and will be converted to microseconds
   c.example 'murano tsdb query hum --sampling_size 30m', 'Get one hum entry from each 30 minute chunk of time'
   c.example 'murano tsdb query hum --sampling_size 30m --aggregate avg', 'Get average hum entry from each 30 minute chunk of time'
 
-  c.action do |args, options|
-    # SKIP: c.verify_arg_count!(args)
-
-    sol = MrMurano::ServiceConfigs::Tsdb.new
-
+  def query_from_args(args)
     query = {}
     tags = {}
     metrics = []
@@ -176,7 +172,10 @@ Also, many date-time formats can be parsed and will be converted to microseconds
     end
     query[:tags] = tags unless tags.empty?
     query[:metrics] = metrics unless metrics.empty?
+    query
+  end
 
+  def query_add_options(query, options, sol)
     # A query without any metrics is invalid.  So if the user didn't provide any,
     # look up all of them (well, frist however many) and use that list.
     if query[:metrics].to_s.empty?
@@ -209,41 +208,111 @@ Also, many date-time formats can be parsed and will be converted to microseconds
     query[:order_by] = options.order_by unless options.order_by.nil?
 
     query[:fill] = options.fill unless options.fill.nil?
-    unless options.aggregate.nil?
-      query[:aggregate] = options.aggregate.split(',')
-    end
+    return if options.aggregate.nil?
+    query[:aggregate] = options.aggregate.split(',')
+  end
 
-    io = File.open(options.output, 'w') if options.output
-    sol.outf sol.query(query) do |dd, ios|
-      # If aggregated, then we need to break up the columns. since each is now a
-      # hash of the aggregated functions
-      unless options.aggregate.nil?
-        dd[:values].map! do |row|
-          row.map do |value|
-            if value.is_a? Hash
-              query[:aggregate].map { |qa| value[qa.to_sym] }
-            else
-              value
-            end
-          end.flatten
+  def unpack_aggregate(query, options, dd)
+    # If aggregated, then we need to break up the columns. since each is now a
+    # hash of the aggregated functions
+
+    # 2017-10-05: Some examples.
+    #
+    # When using, e.g., --sampling_size 30m
+    #
+    #   { :values=>[["2017-10-05T13:30:00.000000+00:00", {:avg=>360.5}]],
+    #     :tags=>{},
+    #     :metrics=>["temperature"],
+    #     :columns=>["time", "temperature"] }
+    #
+    # When not using --sampling_size, e.g.,
+    #
+    #   { :values=>{:temperature=>{:avg=>360.5}},
+    #     :tags=>{},
+    #     :metrics=>["temperature"] }
+    #
+    # Or, if there are not metrics in the specified time frame,
+    #
+    #   { :values=>{:temperature=>{:avg=>nil}},
+    #     :tags=>{},
+    #     :metrics=>["temperature"] }
+
+    if options.aggregate.nil?
+      # Return just :columns and :values to not pollute other
+      # output, i.e., --json, etc.
+      [dd[:columns], dd[:values]]
+    elsif options.sampling_size.nil?
+      # dd[:values] is a Hash.
+      unpack_grouped_values(query, dd)
+    else
+      # dd[:values] is a list.
+      unpack_raw_values(query, dd)
+    end
+  end
+
+  def unpack_raw_values(query, dd)
+    vals = dd[:values].map do |row|
+      row.map do |value|
+        if value.is_a? Hash
+          query[:aggregate].map { |qa| value[qa.to_sym] }
+        elsif value == 'none'
+          # Fill in empty cells, one for each aggregate.
+          query[:aggregate].map { 'none' }
+        else
+          value
         end
-        dd[:columns].map! do |col|
-          if col == 'time'
-            col
-          else
-            query[:aggregate].map { |qa| "#{col}.#{qa}" }
-          end
-        end.flatten!
+      end.flatten
+    end
+    cols = dd[:columns].map do |col|
+      if col == 'time'
+        col
+      else
+        query[:aggregate].map { |qa| "#{col}.#{qa}" }
       end
+    end.flatten!
+    [cols, vals]
+  end
+
+  def unpack_grouped_values(query, dd)
+    vals = []
+    cols = ['metric'] + query[:aggregate]
+    dd[:values].map do |metric, results|
+      row = [metric]
+      query[:aggregate].each do |agg|
+        agg = agg.to_sym
+        if !results.key? agg
+          row += ['none']
+        else
+          row += [results[agg] || '']
+        end
+      end
+      vals += [row]
+    end
+    [cols, vals]
+  end
+
+  def query_solution_query(query, options, sol)
+    io = File.open(options.output, 'w') if options.output
+    results = sol.query(query)
+    sol.outf(results) do |dd, ios|
+      cols, vals = unpack_aggregate(query, options, dd)
       sol.tabularize(
         {
-          headers: dd[:columns],
-          rows: dd[:values],
+          headers: cols,
+          rows: vals,
         },
         ios
       )
     end
     io.close unless io.nil?
+  end
+
+  c.action do |args, options|
+    # SKIP: c.verify_arg_count!(args)
+    query = query_from_args(args)
+    sol = MrMurano::ServiceConfigs::Tsdb.new
+    query_add_options(query, options, sol)
+    query_solution_query(query, options, sol)
   end
 end
 
