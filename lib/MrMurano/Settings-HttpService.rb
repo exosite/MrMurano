@@ -4,7 +4,6 @@ require 'json'
 module MrMurano
   module Httpservice
     class Base < ServiceConfig
-
       def initialize(api_id=nil)
         @solntype = 'application.id'
         super
@@ -14,9 +13,9 @@ module MrMurano
       def info
         get
       end
-
     end
 
+    # For things on ServiceConfig, they always have a parameters…
     class Settings < Base
       def credentials
         ret = get
@@ -26,8 +25,6 @@ module MrMurano
       def credentials=(x)
         raise 'Not Hash' unless x.is_a? Hash
         put('', {
-          :solution_id => '',
-          :service => 'http',
           :parameters => {
             :credentials => x.to_json
           }
