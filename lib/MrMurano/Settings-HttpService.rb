@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'MrMurano/Solution-ServiceConfig'
 require 'json'
 
@@ -19,18 +21,19 @@ module MrMurano
     class Settings < Base
       def credentials
         ret = get
-        astr = (ret[:parameters] or {})[:credentials] or ''
+        astr = ((ret[:parameters] || {})[:credentials]) || ''
         JSON.parse(astr, json_opts)
       end
+
       def credentials=(x)
         raise 'Not Hash' unless x.is_a? Hash
-        put('', {
-          :parameters => {
-            :credentials => x.to_json
+        put(
+          '',
+          parameters: {
+            credentials: x.to_json,
           }
-        })
+        )
       end
-
     end
   end
 end
