@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Last Modified: 2017.10.26 /coding: utf-8
 # Copyright © 2016-2017 Exosite LLC.
 # License: MIT. See LICENSE.txt.
 #  vim:tw=0:ts=2:sw=2:et:ai
@@ -132,6 +132,7 @@ Style/FileName:
     - 'lib/MrMurano/ProjectFile.rb'
     - 'lib/MrMurano/ReCommander.rb'
     - 'lib/MrMurano/Setting.rb'
+    - 'lib/MrMurano/Settings-HttpService.rb'
     - 'lib/MrMurano/Solution-ServiceConfig.rb'
     - 'lib/MrMurano/Solution-Services.rb'
     - 'lib/MrMurano/Solution-Users.rb'
