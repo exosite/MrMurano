@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Last Modified: 2017.09.29 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -43,7 +43,7 @@ module MrMurano
       # @return URI: The full URI for this enpoint.
       def endpoint(path='')
         super
-        parts = ['https:/', $cfg['net.host'], 'api:1'] + @uriparts
+        parts = [$cfg['net.protocol'] + ':/', $cfg['net.host'], 'api:1'] + @uriparts
         s = parts.map(&:to_s).join('/')
         URI(s + path.to_s)
       end

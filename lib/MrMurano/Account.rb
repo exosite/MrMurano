@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.21 /coding: utf-8
+# Last Modified: 2017.09.29 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -42,7 +42,7 @@ module MrMurano
     end
 
     def endpoint(path)
-      URI('https://' + host + '/api:1/' + path.to_s)
+      URI($cfg['net.protocol'] + '://' + host + '/api:1/' + path.to_s)
     end
 
     # ---------------------------------------------------------------------
