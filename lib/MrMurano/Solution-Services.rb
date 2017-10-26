@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Last Modified: 2017.10.26 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -68,7 +68,7 @@ module MrMurano
         # I.e., thereitem.phantom, an "undeletable" file that does not
         # exist locally but should not be deleted from server.
         # MAYBE/2017-09-07: Honor options.ignore_errors here?
-        raise 'no file' unless thereitem.script
+        raise "no file at #{localpath}" unless thereitem.script
         script = thereitem.script
       end
 
