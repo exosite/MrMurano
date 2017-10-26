@@ -67,6 +67,7 @@ Or set your password with `murano password set <username>`.
         error("#{prologue} #{LOGIN_NOTICE}")
         warned_once = true
         username = ask('User name: ')
+        # FIXME/2017-09-29: Shouldn't we save to project files, too?...
         $cfg.set('user.name', username, :user)
         $project.refresh_user_name
         MrMurano::Verbose.whirly_unpause
@@ -219,6 +220,7 @@ Or set your password with `murano password set <username>`.
 
       # First, delete/invalidate the remote token.
       unless twoftoken.to_s.empty?
+        verbose 'Removing two-factor token.'
         @suppress_error = true
         delete('token/' + twoftoken)
         # The response is nil if the token was not recognized, otherwise it's
@@ -235,6 +237,8 @@ Or set your password with `murano password set <username>`.
         pwd_file.remove(net_host, user_name) unless token_delete_only
         pwd_file.remove(net_host, user_name + '/twofactor')
         pwd_file.save
+      else
+        verbose 'Skipping password scrub: need both net.host and user.name to remove.'
       end
 
       clear_from_config(net_host, user_name) unless token_delete_only
@@ -249,7 +253,10 @@ Or set your password with `murano password set <username>`.
       # Only clear user name from the user config if the net.host
       # or user.name did not come from a different config, like the
       # --project config.
-      return unless (user_net_host == net_host) && (user_user_name == user_name)
+      unless (user_net_host == net_host) && (user_user_name == user_name)
+        verbose 'Skipping config scrub: net.host and/or user.name do not match.'
+        return
+      end
       $cfg.set('user.name', nil, :user)
       $cfg.set('business.id', nil, :user)
       $cfg.set('business.name', nil, :user)
