@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.20 /coding: utf-8
+# Last Modified: 2017.09.29 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -76,14 +76,14 @@ module MrMurano
 
     # Default endpoint unless Class overrides it.
     def endpoint(path)
-      URI('https://' + $cfg['net.host'] + '/api:1/' + path.to_s)
+      URI($cfg['net.protocol'] + '://' + $cfg['net.host'] + '/api:1/' + path.to_s)
     end
 
     def http
-      uri = URI('https://' + $cfg['net.host'])
+      uri = URI($cfg['net.protocol'] + '://' + $cfg['net.host'])
       if !defined?(@http) || @http.nil?
         @http = Net::HTTP.new(uri.host, uri.port)
-        @http.use_ssl = true
+        @http.use_ssl = true if $cfg['net.protocol'] == 'https'
         begin
           @http.start
         rescue SocketError => err

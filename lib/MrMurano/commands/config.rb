@@ -1,4 +1,4 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Last Modified: 2017.09.29 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -89,7 +89,9 @@ If section is left out, then key is assumed to be in the 'tool' section.
         scopes = MrMurano::Config::CFG_SCOPES if scopes.empty?
         is_wild = $cfg.wild?(args[0])
         if !is_wild
-          puts $cfg.get(args[0], scopes)
+          val = $cfg.get(args[0], scopes)
+          MrMurano::Verbose.verbose "No such key: #{args[0]}" if val.nil?
+          puts val
         else
           kvals = $cfg.get_wild(args[0], scopes)
           # LATER/2017-08-16: Honor --json option.
