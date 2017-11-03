@@ -141,7 +141,7 @@ module MrMurano
           resp += JSON.pretty_generate(jsn)
         elsif jsn.is_a? Hash
           resp += "[#{jsn[:statusCode]}] " if jsn.key? :statusCode
-          resp += jsn[:message] if jsn.key? :message
+          resp += jsn[:message].to_s if jsn.key? :message
         else
           resp += jsn.to_s
         end

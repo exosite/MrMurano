@@ -113,6 +113,7 @@ module MrMurano
   # :nocov:
   class Services < SolutionBase
     def initialize(api_id=nil)
+      @solntype = 'application.id'
       super
       @uriparts << :service
     end
