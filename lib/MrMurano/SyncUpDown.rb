@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.21 /coding: utf-8
+# Last Modified: 2017.11.03 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -93,6 +93,10 @@ module MrMurano
       # @param value [Object] value to set
       def []=(key, value)
         public_send("#{key}=", value)
+      rescue StandardError => err
+        MrMurano::Verbose.error(
+          "Unable to set key: #{key} / value: #{value} / err: #{err} / self: #{inspect}"
+        )
       end
 
       # Delete a key
