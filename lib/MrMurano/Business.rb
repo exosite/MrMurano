@@ -1,4 +1,4 @@
-# Last Modified: 2017.09.20 /coding: utf-8
+# Last Modified: 2017.10.02 /coding: utf-8
 # frozen_string_literal: true
 
 # Copyright © 2016-2017 Exosite LLC.
@@ -109,7 +109,7 @@ module MrMurano
 
     def self.missing_business_id_msg
       %(
-business ID not specified. For hints: #{MrMurano::EXE_NAME} business --help
+        business ID not specified. For hints: #{MrMurano::EXE_NAME} business --help
       ).strip
     end
 
