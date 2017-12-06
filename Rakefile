@@ -50,7 +50,7 @@ end
 
 desc 'Tail the CI build file and the curl file'
 task :tail do
-  sh %(tail -F .rake_build.out curldebug.out)
+  sh %(tail -F .trustme.log curldebug.out)
 end
 
 desc 'display remind of how to release'
