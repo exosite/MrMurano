@@ -53,6 +53,16 @@ module MrMurano
             item[:content_type] = 'application/json'
           end
           # XXX should this update the script header?
+          # MUR-5151: Murano is not being POSIX-compliant: it doesn't
+          # terminate lines with a newline, i.e., the last line doesn't
+          # contain a trailing newline. You'll notice that text editors
+          # do this. And this is making things diff that should not.
+          # See also:
+          #   http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/
+          #     V1_chap03.html#tag_03_206
+          # 3.206 Line: "A sequence of zero or more non- <newline>
+          #   characters plus a terminating <newline> character."
+          item[:script] += "\n" unless item[:script].end_with? "\n"
           RouteItem.new(item)
         end
         # MAYBE/2017-08-17:
