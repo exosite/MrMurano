@@ -879,7 +879,9 @@ module MrMurano
             if pattern.to_s[0] == '#'
               match(item, pattern)
             elsif !defined?(item.local_path) || item.local_path.nil?
-              false
+              into = location
+              lpath = tolocalpath(into, item)
+              lpath.to_s.include? pattern
             else
               item[:local_path].fnmatch(pattern)
             end
