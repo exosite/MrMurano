@@ -59,6 +59,14 @@ module MrMurano
       delete('/' + name)
     end
 
+    def remove_lite(_name, item, modify=false)
+      # This is a :phantom item, which has a default script, e.g.,
+      #   item[:script] => "--#EVENT timer timer\n"
+      localpath = tolocalpath(location, item)
+      item[:script] = ''
+      upload(localpath, item, modify)
+    end
+
     # @param modify Bool: True if item exists already and this is changing it
     def upload(localpath, thereitem, _modify=false)
       localpath = Pathname.new(localpath) unless localpath.is_a?(Pathname)
