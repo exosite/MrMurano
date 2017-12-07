@@ -69,6 +69,7 @@ module MrMurano
 
         ret[:content_type] = 'application/json' if ret[:content_type].empty?
 
+        add_terminating_nl = ret[:script].end_with? "\n"
         script = ret[:script].lines.map(&:chomp)
 
         aheader = (script.first || '')
@@ -94,7 +95,8 @@ module MrMurano
         end
         # otherwise current header is good.
 
-        script = script.join("\n") + "\n"
+        script = script.join("\n")
+        script += "\n" if add_terminating_nl
         if block_given?
           yield script
         else
