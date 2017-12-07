@@ -894,7 +894,7 @@ module MrMurano
               lpath = tolocalpath(into, item)
               lpath.to_s.include? pattern
             else
-              item[:local_path].fnmatch(pattern)
+              item[:local_path].to_s.include? pattern
             end
           end
         end
