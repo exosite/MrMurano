@@ -267,10 +267,12 @@ RSpec.shared_context 'CI_CMD' do
     # at_exit, it uses runner.command_exit to tell ReCommander's at_exit
     # monkey patch not to call Commander.run!. Via rspec, we don't use the
     # at_exit hook, or ReCommander.
-    $cfg = MrMurano::Config.new(::Commander::Runner.instance)
-    $cfg.load
-    $cfg.validate_cmd(cmd)
+    if $cfg.nil?
+      $cfg = MrMurano::Config.new(::Commander::Runner.instance)
+      $cfg.load
+    end
     $cfg['tool.no-progress'] = true
+    $cfg.validate_cmd(cmd)
     runner = ::Commander::Runner.instance
     unless defined?(runner.command_exit) && runner.command_exit
       # Commander's at_exit hook calls runner.run! which runs the command

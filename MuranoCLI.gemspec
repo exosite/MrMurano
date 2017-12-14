@@ -53,7 +53,8 @@ explicitly specifying the version. For instance,
   #   Ignoring eventmachine-1.2.3 because its extensions are not built.
   #     Try: gem pristine eventmachine --version 1.2.3
   #   This might be because 'json' was also being complained about.
-  #s.add_runtime_dependency('eventmachine', '~> 1.2.3')
+  s.add_runtime_dependency('eventmachine', '~> 1.2.5')
+  s.add_runtime_dependency('faye-websocket', '~> 0.10.7')
   s.add_runtime_dependency('highline', '~> 1.7.8')
   s.add_runtime_dependency('http-form_data', '~> 1.0.3')
   s.add_runtime_dependency('inflecto')
@@ -85,6 +86,7 @@ explicitly specifying the version. For instance,
   s.add_development_dependency('rubocop', '~> 0.49.1')
   s.add_development_dependency('simplecov')
   s.add_development_dependency('webmock', '~> 2.3.0')
+  s.add_development_dependency('websocket-driver', '~> 0.7.0')
   # maybe? s.add_development_dependency('vcr', '~> ???')
   s.add_development_dependency('yard')
 

@@ -12,7 +12,8 @@ source 'http://rubygems.org'
 gem 'certified', '1.0.0'
 gem 'commander', '~> 4.4.3'
 gem 'dotenv', '~> 2.1.1'
-#gem 'eventmachine', '~> 1.2.3'
+gem 'eventmachine', '~> 1.2.5'
+gem 'faye-websocket', '~> 0.10.7'
 gem 'highline', '~> 1.7.8'
 gem 'http-form_data', '~> 1.0.3'
 gem 'inflecto'
@@ -44,6 +45,7 @@ group :test do
   gem 'rubocop', '~> 0.49.1'
   gem 'simplecov', require: false
   gem 'webmock', '~> 2.3.0'
+  gem 'websocket-driver', '~> 0.7.0'
   #gem 'vcr'
   gem 'yard'
 end
