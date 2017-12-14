@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'uri'
 require 'MrMurano/Config'
@@ -38,7 +38,7 @@ module MrMurano
       # @return URI: The full URI for this endpoint.
       def endpoint(path='')
         super
-        parts = ['https:/', $cfg['net.host'], 'api:1'] + @uriparts
+        parts = [$cfg['net.protocol'] + ':/', $cfg['net.host'], 'api:1'] + @uriparts
         s = parts.map(&:to_s).join('/')
         URI(s + path.to_s)
       end

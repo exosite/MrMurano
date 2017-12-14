@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'MrMurano/Solution'
 
@@ -49,7 +49,7 @@ module MrMurano
       @scid = scid_for_name(@service_name)
     end
 
-    def create(pid, name=nil, &block) #? script_key?
+    def create(pid, name=nil, &block)
       name = pid if name.to_s.empty?
       raise 'Missing name/script_key?' if name.to_s.empty?
       # See pegasus_registry PostServiceConfig for the POST properties.

@@ -1805,7 +1805,7 @@ XXX
   def load(filename = nil)
     begin
       filename ||= File.expand_path(File.basename($0, '.*'), '~/.options')
-    rescue
+    rescue StandardError
       return false
     end
     begin

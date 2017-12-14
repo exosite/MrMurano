@@ -1,11 +1,11 @@
-# Last Modified: 2017.10.05 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
-require 'date'
+require 'time'
 require 'MrMurano/ReCommander'
 require 'MrMurano/Solution-ServiceConfig'
 require 'MrMurano/SubCmdGroupContext'
@@ -42,8 +42,7 @@ module MrMurano
         if str =~ /^\d+(u|ms|s)?$/
           str
         else
-          dt = DateTime.parse(str)
-          (dt.to_time.to_f * 1_000_000).to_i
+          (Time.parse(str).to_f * 1_000_000).to_i
         end
       end
     end

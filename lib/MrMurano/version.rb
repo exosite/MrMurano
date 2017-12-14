@@ -1,9 +1,9 @@
-# Last Modified: 2017.11.03 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 module MrMurano
   # USAGE: Use 'beta.' and 'pre.' to label beta releases and dev builds.
@@ -26,7 +26,7 @@ module MrMurano
   #     '3.0.0-beta.2' is changed to '3.0.0.pre.beta.2'
   #   which breaks our build (which expects the version to match herein).
   #   So stick to using the '.pre.X' syntax, which ruby/gems knows.
-  VERSION = '3.0.7'
+  VERSION = '3.0.8'
   EXE_NAME = File.basename($PROGRAM_NAME)
   SIGN_UP_URL = 'https://exosite.com/signup/'
 end

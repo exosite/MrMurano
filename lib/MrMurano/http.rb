@@ -1,14 +1,14 @@
-# Last Modified: 2017.09.20 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'certified' if Gem.win_platform?
-require 'date'
 require 'json'
 require 'net/http'
+require 'time'
 require 'uri'
 # 2017-06-07: [lb] getting "execution expired (Net::OpenTimeout)" on http.start.
 # Suggestions online say to load the pure-Ruby DNS implementation, resolv.rb.
@@ -47,43 +47,47 @@ module MrMurano
     def curldebug(request)
       return unless $cfg['tool.curldebug']
       formp = (request.content_type =~ %r{multipart/form-data})
-      a = []
-      a << %(curl -s)
+      ccmd = []
+      ccmd << %(curl -s)
       if request.key?('Authorization')
-        a << %(-H 'Authorization: #{request['Authorization']}')
+        ccmd << %(-H 'Authorization: #{request['Authorization']}')
       end
-      a << %(-H 'User-Agent: #{request['User-Agent']}')
-      a << %(-H 'Content-Type: #{request.content_type}') unless formp
-      a << %(-X #{request.method})
-      a << %('#{request.uri}')
+      ccmd << %(-H 'User-Agent: #{request['User-Agent']}')
+      ccmd << %(-H 'Content-Type: #{request.content_type}') unless formp
+      ccmd << %(-X #{request.method})
+      ccmd << %('#{request.uri}')
       unless request.body.nil?
         if formp
           m = request.body.match(
             /form-data;\s+name="(?<name>[^"]+)";\s+filename="(?<filename>[^"]+)"/
           )
-          a << %(-F #{m[:name]}=@#{m[:filename]}) unless m.nil?
+          ccmd << %(-F #{m[:name]}=@#{m[:filename]}) unless m.nil?
         else
-          a << %(-d '#{request.body}')
+          ccmd << %(-d '#{request.body}')
         end
       end
+      MrMurano::Http.curldebug_log(ccmd.join(' '))
+    end
+
+    def self.curldebug_log(ccmd)
       if $cfg.curlfile_f.nil?
-        MrMurano::Progress.instance.whirly_interject { puts a.join(' ') }
+        MrMurano::Progress.instance.whirly_interject { puts ccmd }
       else
-        $cfg.curlfile_f << a.join(' ') + "\n\n"
+        $cfg.curlfile_f << ccmd + "\n\n"
         $cfg.curlfile_f.flush
       end
     end
 
     # Default endpoint unless Class overrides it.
     def endpoint(path)
-      URI('https://' + $cfg['net.host'] + '/api:1/' + path.to_s)
+      URI($cfg['net.protocol'] + '://' + $cfg['net.host'] + '/api:1/' + path.to_s)
     end
 
     def http
-      uri = URI('https://' + $cfg['net.host'])
+      uri = URI($cfg['net.protocol'] + '://' + $cfg['net.host'])
       if !defined?(@http) || @http.nil?
         @http = Net::HTTP.new(uri.host, uri.port)
-        @http.use_ssl = true
+        @http.use_ssl = true if $cfg['net.protocol'] == 'https'
         begin
           @http.start
         rescue SocketError => err
@@ -117,7 +121,7 @@ module MrMurano
     # 2017-08-20: isJSON and showHttpError are grandparented into lint exceptions.
     def isJSON(data)
       [true, JSON.parse(data, json_opts)]
-    rescue
+    rescue StandardError
       [false, data]
     end
 
@@ -175,7 +179,7 @@ module MrMurano
       return {} if response.body.nil?
       begin
         JSON.parse(response.body, json_opts)
-      rescue
+      rescue StandardError
         response.body
       end
     end
@@ -299,7 +303,7 @@ if RUBY_VERSION == '2.0.0'
               s.post_connection_check(@address)
             end
             @ssl_session = s.session
-          rescue => exception
+          rescue StandardError => exception
             D "Conn close because of connect error #{exception}"
             @socket.close if @socket && !@socket.closed?
             raise exception

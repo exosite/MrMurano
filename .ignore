@@ -11,7 +11,7 @@ tags
 
 # 2017-05-12: Testing!
 *.out
-.rake_build.out
+.trustme.log
 curldebug.out
 
 rspec-*.html

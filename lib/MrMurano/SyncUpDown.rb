@@ -1,9 +1,9 @@
-# Last Modified: 2017.11.03 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 # FIXME/MAYBE: Fix semicolon usage.
 # rubocop:disable Style/Semicolon
@@ -14,6 +14,7 @@ require 'os'
 require 'pathname'
 #require 'shellwords'
 require 'tempfile'
+require 'time'
 require 'MrMurano/progress'
 require 'MrMurano/verbosing'
 require 'MrMurano/hash'
@@ -75,6 +76,7 @@ module MrMurano
         "@#{key}"
       end
       private :as_inst
+
       def as_sym(key)
         return key.to_sym if key.to_s[0] != '@'
         key.to_s[1..-1].to_sym
@@ -86,6 +88,8 @@ module MrMurano
       # @return [Object] The value
       def [](key)
         public_send(key.to_sym)
+      rescue NoMethodError
+        nil
       end
 
       # Set attribute as if this was a Hash
@@ -167,7 +171,8 @@ module MrMurano
         #   MAYBE/2017-07-18: Permanently disable Style/RedundantSelf?
         self.to_h <=> other.to_h
       end
-    end # MrMurano::SyncUpDown::Item
+    end
+    # MrMurano::SyncUpDown::Item
 
     #######################################################################
     # Methods that must be overridden
@@ -191,6 +196,10 @@ module MrMurano
       # :nocov:
       raise 'Forgotten implementation'
       # :nocov:
+    end
+
+    def remove_lite(itemkey, _thereitem, _modify=false)
+      remove(itemkey)
     end
 
     ## Upload local item to remote
@@ -300,31 +309,32 @@ module MrMurano
     #
     # @param local [Pathname] Full path of where to download to
     # @param item [Item] The item to download
-    def download(local, item, options={})
+    def download(local, item, options: {}, is_tmp: false)
       #if item[:bundled]
       #  warning "Not downloading into bundled item #{synckey(item)}"
       #  return
       #end
       id = item[@itemkey.to_sym]
       if id.to_s.empty?
-        # 2017-09-05: MRMUR-156: User seeing this.
         if @itemkey.to_sym != :id
-          debug "!!! Missing '#{@itemkey}', trying :id instead"
+          debug "Missing '#{@itemkey}', trying :id instead"
           id = item[:id]
         end
         if id.to_s.empty?
           debug %(Remote item "#{item[:name]}" missing :id / local: #{local} / item: #{item})
           return if options[:ignore_errors]
           error %(Remote item missing :id => #{local})
-          print %(You can ignore this error using --ignore-errors)
+          say %(You can ignore this error using --ignore-errors)
           exit 1
         end
         debug ":id => #{id}"
       end
-
-      relpath = local.relative_path_from(Pathname.pwd).to_s
-      return unless download_item_allowed(relpath)
-
+      unless is_tmp
+        relpath = local.relative_path_from(Pathname.pwd).to_s
+        return unless download_item_allowed(relpath)
+      end
+      # MAYBE: If is_tmp and doing syncdown, just use this file rather
+      # than downloading again.
       local.dirname.mkpath
       local.open('wb') do |io|
         fetch(id) do |chunk|
@@ -334,8 +344,8 @@ module MrMurano
       update_mtime(local, item)
     end
 
-    def diff_download(tmp_path, merged)
-      download(tmp_path, merged)
+    def diff_download(tmp_path, merged, options)
+      download(tmp_path, merged, options: options, is_tmp: true)
     end
 
     ## Give the local file the same timestamp as the remote, because diff.
@@ -350,7 +360,7 @@ module MrMurano
       return unless item[:updated_at]
 
       mod_time = item[:updated_at]
-      mod_time = DateTime.parse(mod_time).to_time unless mod_time.is_a?(Time)
+      mod_time = Time.parse(mod_time) unless mod_time.is_a?(Time)
       begin
         FileUtils.touch([local.to_path], mtime: mod_time)
       rescue Errno::EACCES => err
@@ -362,7 +372,7 @@ module MrMurano
         #)
         unless OS.windows?
           msg = 'Unexpected: touch failed on non-Windows machine'
-          $stderr.puts("#{msg} / host_os: #{RbConfig::CONFIG['host_os']} / err: #{err}")
+          warn "#{msg} / host_os: #{RbConfig::CONFIG['host_os']} / err: #{err}"
         end
 
         # 2017-07-13: Nor does ctime work.
@@ -657,7 +667,7 @@ module MrMurano
       if $cfg['tool.no-progress']
         say(msg)
       else
-        MrMurano::Verbose.verbose(msg + "\n")
+        verbose(msg + "\n")
       end
     end
 
@@ -687,7 +697,7 @@ module MrMurano
       itemkey = @itemkey.to_sym
       todel.each do |item|
         syncup_item(item, options, :delete, 'Removing') do |aitem|
-          remove(aitem[itemkey])
+          remove_lite(aitem[itemkey], aitem.reject { |k, _v| k == :local_path }, true)
           num_synced += 1
         end
       end
@@ -758,13 +768,13 @@ module MrMurano
       end
       toadd.each do |item|
         syncdown_item(item, into, options, :create, 'Adding') do |dest, aitem|
-          download(dest, aitem, options)
+          download(dest, aitem, options: options)
           num_synced += 1
         end
       end
       tomod.each do |item|
         syncdown_item(item, into, options, :update, 'Updating') do |dest, aitem|
-          download(dest, aitem, options)
+          download(dest, aitem, options: options)
           num_synced += 1
         end
       end
@@ -789,13 +799,18 @@ module MrMurano
     #
     # WARNING: This will download the remote item to do the diff.
     #
-    # @param merged [merged] The merged item to get a diff of
-    # @local local, unadulterated (non-merged) item
+    # @param merged [Hash] The merged item to get a diff of
+    # @param local [MrMurano::Webservice::Endpoint::RouteItem] Raw local item
+    # @param there [MrMurano::Webservice::Endpoint::RouteItem] Raw remote item
+    # @param asdown [Boolean] Direction/prespective of diff
     # @return [String] The diff output
-    def dodiff(merged, local, _there=nil, asdown=false)
+    def dodiff(merged, local, _there=nil, options={})
       trmt = Tempfile.new([tolocalname(merged, @itemkey) + '_remote_', '.lua'])
       tlcl = Tempfile.new([tolocalname(merged, @itemkey) + '_local_', '.lua'])
       Pathname.new(tlcl.path).open('wb') do |io|
+        # Copy the local file to a temp file, for the diff command.
+        # And for resources, remove the local-only :selected key, as
+        # it's not part of the remote item that gets downloaded next.
         if merged.key?(:script)
           io << config_vars_decode(merged[:script])
         else
@@ -807,10 +822,11 @@ module MrMurano
           diff_item_write(io, merged, local, nil)
         end
       end
+
       stdout_and_stderr = ''
       begin
         tmp_path = Pathname.new(trmt.path)
-        diff_download(tmp_path, merged)
+        diff_download(tmp_path, merged, options)
 
         MrMurano::Verbose.whirly_stop
 
@@ -824,7 +840,7 @@ module MrMurano
         local_path = tlcl.path.gsub(
           ::File::SEPARATOR, ::File::ALT_SEPARATOR || ::File::SEPARATOR
         )
-        if asdown
+        if options[:asdown]
           cmd << local_path
           cmd << remote_path
         else
@@ -834,9 +850,10 @@ module MrMurano
 
         stdout_and_stderr, _status = Open3.capture2e(*cmd)
         # How important are the first two lines of the diff? E.g.,
-        #     --- /tmp/raw_data_remote_20170718-20183-gdyeg9.lua	2017-07-18 13:13:13.864051905 -0500
-        #     +++ /tmp/raw_data_local_20170718-20183-71o4me.lua	2017-07-18 13:13:14.520049397 -0500
-        # Seems like printing the path to a since-deleted temporary file is misleading.
+        #     --- /tmp/raw_data_remote_20170718-20183-gdyeg9.lua	2017-07-18 ...
+        #     +++ /tmp/raw_data_local_20170718-20183-71o4me.lua	2017-07-18 ...
+        # Seems like printing the path to a since-deleted temporary file is
+        # misleading, so cull these lines.
         if $cfg['diff.cmd'] == 'diff' || $cfg['diff.cmd'].start_with?('diff ')
           lineno = 0
           consise = stdout_and_stderr.lines.reject do |line|
@@ -873,9 +890,11 @@ module MrMurano
             if pattern.to_s[0] == '#'
               match(item, pattern)
             elsif !defined?(item.local_path) || item.local_path.nil?
-              false
+              into = location
+              lpath = tolocalpath(into, item)
+              lpath.to_s.include? pattern
             else
-              item[:local_path].fnmatch(pattern)
+              item[:local_path].to_s.include? pattern
             end
           end
         end
@@ -897,31 +916,19 @@ module MrMurano
 
       therebox, localbox = items_lists(options, selected)
 
-      toadd, todel = items_new_and_old(options, therebox, localbox)
+      statuses = { skipd: [] }
 
-      tomod, unchg = items_mods_and_chgs(options, therebox, localbox)
+      items_new_and_old!(statuses, options, therebox, localbox)
 
-      clash = items_cull_clashes!([toadd, todel, tomod, unchg])
+      items_mods_and_chgs!(statuses, options, therebox, localbox)
 
-      if options[:unselected]
-        {
-          toadd: toadd,
-          todel: todel,
-          tomod: tomod,
-          unchg: unchg,
-          skipd: [],
-          clash: clash,
-        }
-      else
-        {
-          toadd: select_selected(toadd),
-          todel: select_selected(todel),
-          tomod: select_selected(tomod),
-          unchg: select_selected(unchg),
-          skipd: [],
-          clash: select_selected(clash),
-        }
-      end
+      statuses.merge!(statuses) { |_key, val1, _val2| sort_by_name(val1) }
+
+      items_cull_clashes!(statuses)
+
+      statuses.each_value { |items| select_selected(items) } unless options[:unselected]
+
+      statuses
     end
 
     def filter_solution(options)
@@ -1027,7 +1034,7 @@ module MrMurano
       [therebox, localbox]
     end
 
-    def items_new_and_old(options, therebox, localbox)
+    def items_new_and_old!(statuses, options, therebox, localbox)
       if options[:asdown]
         todel = (localbox.keys - therebox.keys).map { |key| localbox[key] }
         toadd = (therebox.keys - localbox.keys).map { |key| therebox[key] }
@@ -1035,35 +1042,58 @@ module MrMurano
         toadd = (localbox.keys - therebox.keys).map { |key| localbox[key] }
         todel = (therebox.keys - localbox.keys).map { |key| therebox[key] }
       end
-      [sort_by_name(toadd), sort_by_name(todel)]
+      statuses[:toadd] = toadd
+      statuses[:todel] = todel
     end
 
-    def items_mods_and_chgs(options, therebox, localbox)
+    def items_mods_and_chgs!(statuses, options, therebox, localbox)
       tomod = []
       unchg = []
+      toadd = []
+      todel = []
 
       (localbox.keys & therebox.keys).each do |key|
+        local = localbox[key]
+        there = therebox[key]
         # Skip this item if it's got duplicate conflicts.
-        next if !localbox[key].is_a?(Hash) && localbox[key].dup_count == 0
-        # Want 'local' to override 'there' except for itemkey.
+        next if !local.is_a?(Hash) && local.dup_count == 0
         if options[:asdown]
-          mrg = therebox[key].reject { |k, _v| k == @itemkey.to_sym }
-          mrg = localbox[key].merge(mrg)
+          # Want 'there' to override 'local'.
+          mrg = local.merge(there)
         else
-          mrg = localbox[key].reject { |k, _v| k == @itemkey.to_sym }
-          mrg = therebox[key].merge(mrg)
+          # Want 'local' to override 'there' except for itemkey.
+          mrg = local.reject { |k, _v| k == @itemkey.to_sym }
+          mrg = there.merge(mrg)
         end
 
-        if docmp(localbox[key], therebox[key])
-          if options[:diff] && mrg[:selected]
-            mrg[:diff] = dodiff(mrg.to_h, localbox[key], therebox[key], options[:asdown])
+        if docmp(local, there)
+          if (options[:diff] || local[:phantom]) && mrg[:selected]
+            mrg[:diff] = dodiff(mrg.to_h, local, there, options)
+            if mrg[:diff].to_s.empty?
+              debug %(Clean diff: #{local[:synckey]})
+              unchg << mrg
+            elsif local[:phantom]
+              if options[:asdown]
+                toadd << mrg
+              else
+                todel << mrg
+              end
+              localbox.delete(key)
+            else
+              tomod << mrg
+            end
+          else
+            tomod << mrg
           end
-          tomod << mrg
         else
           unchg << mrg
         end
       end
-      [sort_by_name(tomod), sort_by_name(unchg)]
+
+      statuses[:tomod] = tomod
+      statuses[:unchg] = unchg
+      statuses[:toadd] += toadd
+      statuses[:todel] += todel
     end
 
     def sort_by_name(list)
@@ -1078,13 +1108,13 @@ module MrMurano
     end
 
     def select_selected(items)
-      items.select { |i| i[:selected] }.map { |i| i.delete(:selected); i }
+      items.select! { |i| i[:selected] }
+      items.map { |i| i.delete(:selected); i }
     end
 
-    def items_cull_clashes!(items_list)
-      items_list = [items_list] unless items_list.is_a?(Array)
+    def items_cull_clashes!(statuses)
       clash = []
-      items_list.each do |items|
+      statuses.each_value do |items|
         items.select! do |item|
           if item[:dup_count].nil?
             true
@@ -1097,7 +1127,7 @@ module MrMurano
           end
         end
       end
-      clash
+      statuses[:clash] = clash
     end
   end
 end

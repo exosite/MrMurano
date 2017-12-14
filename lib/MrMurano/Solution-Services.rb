@@ -1,16 +1,17 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'abbrev'
 require 'cgi'
-require 'date'
 require 'digest/sha1'
 require 'json'
 require 'net/http'
+require 'pathname'
+require 'time'
 require 'uri'
 require 'yaml'
 require 'MrMurano/progress'
@@ -58,6 +59,14 @@ module MrMurano
       delete('/' + name)
     end
 
+    def remove_lite(_name, item, modify=false)
+      # This is a :phantom item, which has a default script, e.g.,
+      #   item[:script] => "--#EVENT timer timer\n"
+      localpath = tolocalpath(location, item)
+      item[:script] = ''
+      upload(localpath, item, modify)
+    end
+
     # @param modify Bool: True if item exists already and this is changing it
     def upload(localpath, thereitem, _modify=false)
       localpath = Pathname.new(localpath) unless localpath.is_a?(Pathname)
@@ -68,13 +77,12 @@ module MrMurano
         # I.e., thereitem.phantom, an "undeletable" file that does not
         # exist locally but should not be deleted from server.
         # MAYBE/2017-09-07: Honor options.ignore_errors here?
-        raise 'no file' unless thereitem.script
+        raise "no file at #{localpath}" unless thereitem.script
         script = thereitem.script
       end
 
       script = config_vars_decode(script)
 
-      localpath = Pathname.new(localpath) unless localpath.is_a?(Pathname)
       name = mkname(thereitem)
       pst = thereitem.to_h.merge(
         #solution_id: $cfg[@solntype],
@@ -144,7 +152,7 @@ module MrMurano
           item_a[:updated_at] = item_a[:local_path].mtime.getutc
         end
       elsif item_a[:updated_at].is_a?(String)
-        item_a[:updated_at] = DateTime.parse(item_a[:updated_at]).to_time.getutc
+        item_a[:updated_at] = Time.parse(item_a[:updated_at]).utc
       end
       if item_b[:updated_at].nil? && item_b[:local_path]
         ct = cached_update_time_for(item_b[:local_path])
@@ -153,7 +161,7 @@ module MrMurano
           item_b[:updated_at] = item_b[:local_path].mtime.getutc
         end
       elsif item_b[:updated_at].is_a?(String)
-        item_b[:updated_at] = DateTime.parse(item_b[:updated_at]).to_time.getutc
+        item_b[:updated_at] = Time.parse(item_b[:updated_at]).utc
       end
       return false if item_a[:updated_at].nil? && item_b[:updated_at].nil?
       return true if item_a[:updated_at].nil? && !item_b[:updated_at].nil?
@@ -182,20 +190,20 @@ module MrMurano
 
     def cache_update_time_for(local_path, time=nil)
       if time.nil?
-        time = Time.now.getutc
+        time = Time.now.utc
       elsif time.is_a?(String)
-        time = DateTime.parse(time)
+        time = Time.parse(time)
       end
       file_hash = local_path_file_hash(local_path)
       entry = {
         sha1: file_hash,
-        updated_at: time.to_datetime.iso8601(3),
+        updated_at: time.iso8601(3),
       }
       cache_file = $cfg.file_at(cache_file_name)
       if cache_file.file?
         cache_file.open('r+') do |io|
           cache = YAML.load(io)
-          cache = {} unless cache
+          cache ||= {}
           io.rewind
           cache[local_path.to_s] = entry
           io << cache.to_yaml
@@ -225,7 +233,7 @@ module MrMurano
           debug(" cm: #{cksm}")
           if entry.is_a?(Hash)
             if entry[:sha1] == cksm && entry.key?(:updated_at)
-              ret = DateTime.parse(entry[:updated_at])
+              ret = Time.parse(entry[:updated_at])
             end
           end
         end

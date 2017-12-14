@@ -1,11 +1,12 @@
-# Last Modified: 2017.08.22 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'inflecto'
+require 'pathname'
 require 'MrMurano/verbosing'
 require 'MrMurano/SyncRoot'
 
@@ -124,6 +125,7 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
       )
       ret[:toadd].each do |item|
         interject " + #{item[:pp_type]}  #{highlight_chg(fmtr(item, options))}"
+        pretty_diff(item, options)
       end
 
       pretty_group_header(
@@ -131,6 +133,7 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
       )
       ret[:todel].each do |item|
         interject " - #{item[:pp_type]}  #{highlight_del(fmtr(item, options))}"
+        pretty_diff(item, options)
       end
 
       pretty_group_header(
@@ -172,6 +175,11 @@ Endpoints can be selected with a "#<method>#<path glob>" pattern.
       else
         interject "Nothing #{header_empty}"
       end
+    end
+
+    def pretty_diff(item, options)
+      return unless options.diff && $cfg['tool.verbose'] && !item[:diff].empty?
+      interject item[:diff]
     end
 
     def highlight_chg(msg)

@@ -7,6 +7,7 @@ outformat = best
 
 [net]
 host = bizapi.hosted.exosite.io
+protocol = https
 
 [location]
 base = <%= File.realpath(@project_dir) %>

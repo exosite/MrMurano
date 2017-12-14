@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.20 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'highline'
 require 'inifile'
@@ -26,6 +26,8 @@ module MrMurano
     # NOTE: This list is ordered, such that values stored in upper scopes
     #   mask values of the same keys in the lower scopes.
     CFG_SCOPES = %i[internal specified env project user defaults].freeze
+
+    CFG_HOST_BIZAPI = 'bizapi.hosted.exosite.io'
 
     ConfigFile = Struct.new(:kind, :path, :data) do
       def load
@@ -149,7 +151,8 @@ module MrMurano
       set('tool.fullerror', false, :defaults)
       set('tool.outformat', 'best', :defaults)
 
-      set('net.host', 'bizapi.hosted.exosite.io', :defaults)
+      set('net.host', CFG_HOST_BIZAPI, :defaults)
+      set('net.protocol', 'https', :defaults)
 
       set('location.base', @project_dir, :defaults) unless @project_dir.nil?
       set('location.files', 'files', :defaults)
@@ -414,7 +417,7 @@ module MrMurano
         else
           # *.blah query
           path.data.each do |ini|
-            path.data[ini].keys.each do |skey|
+            path.data[ini].each_key do |skey|
               next unless ikey == '*' || skey == ikey
               kvid = "#{ini}.#{skey}"
               next if seen[kvid]
@@ -578,6 +581,24 @@ module MrMurano
       elsif !@curlfile_f.nil?
         @curlfile_f.close
         @curlfile_f = nil
+      end
+    end
+
+    # To set a different protocol://host, i.e., for local developing.
+    def set_net_host(url_or_host, scope=:internal)
+      return if url_or_host.nil?
+      if url_or_host.to_s.empty?
+        $cfg.set('net.protocol', 'https', scope)
+        $cfg.set('net.host', CFG_HOST_BIZAPI, scope)
+        return
+      end
+      protocol_or_host, host_maybe = url_or_host.split('://', 2)
+      if !host_maybe.nil?
+        $cfg.set('net.protocol', protocol_or_host, scope)
+        $cfg.set('net.host', host_maybe, scope)
+      else
+        $cfg.set('net.protocol', 'https', scope)
+        $cfg.set('net.host', protocol_or_host, scope)
       end
     end
   end

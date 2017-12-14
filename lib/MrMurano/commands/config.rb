@@ -1,9 +1,9 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'MrMurano/ReCommander'
 
@@ -89,7 +89,9 @@ If section is left out, then key is assumed to be in the 'tool' section.
         scopes = MrMurano::Config::CFG_SCOPES if scopes.empty?
         is_wild = $cfg.wild?(args[0])
         if !is_wild
-          puts $cfg.get(args[0], scopes)
+          val = $cfg.get(args[0], scopes)
+          MrMurano::Verbose.verbose "No such key: #{args[0]}" if val.nil?
+          puts val
         else
           kvals = $cfg.get_wild(args[0], scopes)
           # LATER/2017-08-16: Honor --json option.

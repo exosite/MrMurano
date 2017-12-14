@@ -1,15 +1,13 @@
-# Last Modified: 2017.09.20 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
-require 'date'
 require 'inflecto'
 require 'json'
 require 'net/http'
-require 'pathname'
 require 'rainbow'
 require 'uri'
 require 'yaml'
@@ -109,7 +107,7 @@ module MrMurano
 
     def self.missing_business_id_msg
       %(
-business ID not specified. For hints: #{MrMurano::EXE_NAME} business --help
+        business ID not specified. For hints: #{MrMurano::EXE_NAME} business --help
       ).strip
     end
 
