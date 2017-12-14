@@ -29,6 +29,7 @@ module MrMurano
 
     def initialize
       @token = nil
+      @twofactor_token = nil
     end
 
     def host
