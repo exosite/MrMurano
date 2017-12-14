@@ -47,29 +47,33 @@ module MrMurano
     def curldebug(request)
       return unless $cfg['tool.curldebug']
       formp = (request.content_type =~ %r{multipart/form-data})
-      a = []
-      a << %(curl -s)
+      ccmd = []
+      ccmd << %(curl -s)
       if request.key?('Authorization')
-        a << %(-H 'Authorization: #{request['Authorization']}')
+        ccmd << %(-H 'Authorization: #{request['Authorization']}')
       end
-      a << %(-H 'User-Agent: #{request['User-Agent']}')
-      a << %(-H 'Content-Type: #{request.content_type}') unless formp
-      a << %(-X #{request.method})
-      a << %('#{request.uri}')
+      ccmd << %(-H 'User-Agent: #{request['User-Agent']}')
+      ccmd << %(-H 'Content-Type: #{request.content_type}') unless formp
+      ccmd << %(-X #{request.method})
+      ccmd << %('#{request.uri}')
       unless request.body.nil?
         if formp
           m = request.body.match(
             /form-data;\s+name="(?<name>[^"]+)";\s+filename="(?<filename>[^"]+)"/
           )
-          a << %(-F #{m[:name]}=@#{m[:filename]}) unless m.nil?
+          ccmd << %(-F #{m[:name]}=@#{m[:filename]}) unless m.nil?
         else
-          a << %(-d '#{request.body}')
+          ccmd << %(-d '#{request.body}')
         end
       end
+      MrMurano::Http.curldebug_log(ccmd.join(' '))
+    end
+
+    def self.curldebug_log(ccmd)
       if $cfg.curlfile_f.nil?
-        MrMurano::Progress.instance.whirly_interject { puts a.join(' ') }
+        MrMurano::Progress.instance.whirly_interject { puts ccmd }
       else
-        $cfg.curlfile_f << a.join(' ') + "\n\n"
+        $cfg.curlfile_f << ccmd + "\n\n"
         $cfg.curlfile_f.flush
       end
     end
