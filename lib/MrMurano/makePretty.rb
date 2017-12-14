@@ -20,9 +20,9 @@ module MrMurano
     HighLine.color_scheme = PRETTIES_COLORSCHEME
 
     # rubocop:disable Style/MethodName: "Use snake_case for method names."
-    def self.makeJsonPretty(data, options)
+    def self.makeJsonPretty(data, options, indent: '', object_nl: '')
       if options.pretty
-        ret = JSON.pretty_generate(data).to_s
+        ret = JSON.pretty_generate(data, indent: indent, object_nl: object_nl).to_s
         ret[0] = HighLine.color(ret[0], :json)
         ret[-1] = HighLine.color(ret[-1], :json)
         ret
@@ -31,7 +31,7 @@ module MrMurano
       end
     end
 
-    def self.makePretty(line, options)
+    def self.MakePrettyLogsV1(line, options)
       # 2017-07-02: Changing shovel operator << to +=
       # to support Ruby 3.0 frozen string literals.
       out = ''
@@ -77,6 +77,189 @@ module MrMurano
         out += makeJsonPretty(line, options)
       end
       out
+    end
+
+    def self.MakePrettyLogsV2(line, options)
+      out = log_pretty_assemble_header(line, options)
+      out += log_pretty_assemble_body(line, options)
+    end
+
+    def self.fmt_text_padded(text, style, out, raw, min_width: 0)
+      padding = min_width - text.length
+      padding = ' ' * (padding > 0 && padding || 0)
+      out += HighLine.color(text, style) + padding
+      raw += text + padding
+      [out, raw]
+    end
+
+    def self.log_pretty_assemble_header(line, options)
+      out = ''
+      raw = ''
+      out, raw = log_pretty_header_add_abbreviated_sev(line, out, raw, options)
+      out, raw = log_pretty_header_add_log_record_type(line, out, raw, options)
+      out, raw = log_pretty_header_add_event_timestamp(line, out, raw, options)
+      out, raw = log_pretty_header_add_murano_tracking(line, out, raw, options)
+      out, raw = log_pretty_header_add_a_service_event(line, out, raw, options)
+      out += "\n"
+    end
+
+    def self.log_pretty_header_add_abbreviated_sev(line, out, raw, _options)
+      fmt_abbreviated_severity(line[:severity], out, raw)
+    end
+
+    def self.log_pretty_header_add_loquacious_sev(line, out, raw, _options)
+      fmt_loquacious_severity(line[:severity], out, raw)
+    end
+
+    def self.fmt_abbreviated_severity(severity, out, raw, min_width: 7)
+      abbrev, loquac, style = styled_severity(severity)
+      fmt_text_padded(abbrev, style, out, raw, min_width: min_width)
+    end
+
+    def self.fmt_loquacious_severity(severity, min_width: 11)
+      abbrev, loquac, style = styled_severity(severity)
+      fmt_text_padded(loquac, style, out, raw, min_width: min_width)
+    end
+
+    def self.styled_severity(severity)
+      case severity
+        when 0 # Emergency: system is unusable
+          ["EMERG", "EMERGENCY", %i[red bold on_white]]
+        when 1 # Alert: action must be taken immediately
+          ["ALERT", "ALERT", %i[red bold]]
+        when 2 # Critical: critical conditions
+          ["CRIT", "CRITICAL", %i[red bold]]
+        when 3 # Error: error conditions
+          ["ERROR", "ERROR", %i[red]]
+        when 4 # Warning: warning conditions
+          ["WARN", "WARNING", %i[yellow]]
+        when 5 # Notice: normal but significant condition
+          ["NOTE", "NOTICE", %i[white]]
+        when 6 # Informational: informational messages
+          ["INFO", "INFO", %i[blue]]
+        when 7 # Debug: debug-level messages ]
+          ["DEBUG", "DEBUG", %i[green]]
+        else
+          ["????#{severity}", "????#{severity}", %i[red]]
+      end
+    end
+
+    def self.log_pretty_header_add_log_record_type(line, out, raw, _options)
+      logType = line[:type].to_s.empty? && '--' || line[:type]
+      fmt_text_padded(logType.upcase, :magenta, out, raw, min_width: 10)
+    end
+
+    def self.log_pretty_header_add_event_timestamp(line, out, raw, options)
+      curtime = fmt_log_record_timestamp(line, options)
+      fmt_text_padded(curtime, :timestamp, out, raw, min_width: 18)
+    end
+
+    def self.fmt_log_record_timestamp(line, options)
+      if line.key?(:timestamp)
+        if line[:timestamp].is_a? Numeric
+          time_secs_epoch = Time.at(line[:timestamp] / 1000.0)
+          if options.localtime
+            curtime = time_secs_epoch.localtime
+          else
+            curtime = time_secs_epoch.gmtime
+          end
+          curtime = curtime.strftime('%Y-%m-%d %M:%S')
+        else
+          curtime = line[:timestamp]
+        end
+      else
+        curtime = '<no timestamp>'
+      end
+      curtime
+    end
+
+    def self.log_pretty_header_add_murano_tracking(line, out, raw, options)
+      return [out, raw] unless options.tracking
+      tid = line[:tracking_id].to_s.empty? && '--------' || line[:tracking_id].slice(0,8)
+      fmt_text_padded(tid, :yellow, out, raw, min_width: 10)
+    end
+
+    def self.log_pretty_header_add_a_service_event(line, out, raw, _options)
+      svc_evt = []
+      svc_evt += [line[:service]] unless line[:service].to_s.empty?
+      svc_evt += [line[:event]] unless line[:event].to_s.empty?
+      svc_evt = "[#{svc_evt.join(' ').upcase}]"
+      out += HighLine.color(svc_evt, :subject)
+      raw += svc_evt
+      [out, raw]
+    end
+
+    def self.log_pretty_assemble_body(line, options)
+      out = ''
+      @body_prefix = '  '
+      out += log_pretty_assemble_message(line, options)
+      out += log_pretty_assemble_data(line, options)
+      out += log_pretty_assemble_remainder(line, options)
+      out += log_pretty_assemble_tracking_id(line, options)
+    end
+
+    def self.log_pretty_assemble_message(line, options)
+      return '' unless line.key?(:message) && !line[:message].to_s.empty?
+      @body_prefix + line[:message] + "\n"
+    end
+
+    def self.log_pretty_assemble_data(line, options)
+      return '' unless line.key?(:data)
+      data = line[:data]
+      if data.is_a?(Hash)
+        out = ''
+        out += log_pretty_emphasize_entry(:request, data, options)
+        out += log_pretty_emphasize_entry(:response, data, options)
+        out += log_pretty_data_remainder(data, options)
+      else
+        data.to_s
+      end
+    end
+
+    def self.log_pretty_emphasize_entry(entry, hash, options)
+      return '' unless hash.key?(entry) && !hash[entry].empty?
+      out = @body_prefix + "---------\n"
+      out += @body_prefix + "#{entry}: "
+      out += log_pretty_json(hash[entry], options)
+      out += "\n"
+    end
+
+    def self.log_pretty_data_remainder(data, options)
+      known_keys = %i[
+        request
+        response
+      ]
+      data = data.reject { |key, _val| known_keys.include?(key) }
+      return '' if data.empty?
+      out = @body_prefix + "---------\n"
+      out += @body_prefix + 'data: ' + log_pretty_json(data, options) + "\n"
+    end
+
+    def self.log_pretty_assemble_remainder(line, options)
+      known_keys = %i[
+        severity
+        type
+        timestamp
+        service
+        event
+        message
+        tracking_id
+        data
+      ]
+      line = line.reject { |key, _val| known_keys.include?(key) }
+      return '' if line.empty?
+      @body_prefix + log_pretty_json(line, options) + "\n"
+    end
+
+    def self.log_pretty_assemble_tracking_id(line, options)
+      log_pretty_emphasize_entry(:tracking_id, line, options)
+    end
+
+    def self.log_pretty_json(hash, options)
+      return '' if hash.empty?
+      makeJsonPretty(
+        hash, options, indent: @body_prefix, object_nl: "\n" + @body_prefix
+      )
     end
   end
 end
