@@ -35,7 +35,7 @@ module MrMurano
         uri += %(?token=#{sol.token})
         uri += %(&query={})
         uri += %(&projection={})
-        # FIXME (landonb): Would we want to add limit=?
+        # FIXME: (landonb): Would we want to add limit=?
         #uri += %(&limit=20)
         uri
       end

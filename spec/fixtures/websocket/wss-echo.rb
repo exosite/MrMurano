@@ -26,9 +26,7 @@ module EchoReceiver
     puts "receive_data: #{msg}"
     # (landonb): What does the parse method do? I don't think we care.
     #   @driver.parse(data)
-    if msg == 'EXIT'
-      EM.stop_event_loop
-    end
+    EM.stop_event_loop if msg == 'EXIT'
     @driver.text(msg)
   end
 end

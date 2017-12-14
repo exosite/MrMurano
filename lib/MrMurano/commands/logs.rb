@@ -163,7 +163,7 @@ def logs_follow(sol, options)
   end
 end
 
-# FIXME (landonb): Delete this after checking in once.
+# FIXME: (landonb): Delete this after checking in once.
 def logs_follow_http(sol, options)
   # Open a lasting connection and continually feed MakePrettyLogsV1().
   sol.get('/logs?polling=true') do |request, http|
@@ -224,7 +224,7 @@ def parse_logs_line(line)
   log_entry = JSON.parse(line)
   elevate_hash(log_entry)
 rescue StandardError => err
-  MrMurano::Verbose.warning "Not JSON: #{line}"
+  MrMurano::Verbose.warning "Not JSON: #{err} / #{line}"
   nil
 end
 
@@ -236,7 +236,7 @@ def get_formatter(options)
   end
 end
 
-def print_raw(line, options={})
+def print_raw(line, _options={})
   puts line
 end
 

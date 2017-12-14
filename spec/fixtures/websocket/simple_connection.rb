@@ -15,13 +15,13 @@ module SimpleWebSocket
 
       @driver.on :connect, &method(:conn_on_open)
 
-      @driver.on :message, -> (e) {
+      @driver.on :message, (lambda do |e|
         @driver.text(e.data)
-      }
+      end)
 
-      @driver.on :close, -> (e) {
+      @driver.on :close, (lambda do |_e|
         close_connection_after_writing
-      }
+      end)
     end
 
     def receive_data(data)

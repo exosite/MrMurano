@@ -12,7 +12,7 @@ module LogsFakerModule
       example_type_script,
       example_type_call,
       example_type_event,
-      example_type_config_deviceV1,
+      example_type_config_device_v1,
       example_type_config_null,
       example_type_config_newservice,
       example_severity_build(0),
@@ -36,113 +36,113 @@ module LogsFakerModule
 
   def example_type_script
     {
-      "type": "script",
-      "timestamp": 1474489282537,
+      "type": 'script',
+      "timestamp": 1_474_489_282_537,
       "severity": 6, # info
-      "message": "abc from lua",
-      "tracking_id": "<UUID>",
-      "service": "webservice",
-      "event": "request",
+      "message": 'abc from lua',
+      "tracking_id": '<UUID>',
+      "service": 'webservice',
+      "event": 'request',
       "data": { # Type specific
-        "endpoint": "GET:/index",
-        "location": "GET:/index:123",
-        "elapsed": 10
-      }
+        "endpoint": 'GET:/index',
+        "location": 'GET:/index:123',
+        "elapsed": 10,
+      },
     }
   end
 
   def example_type_call
     {
-      "type": "call",
-      "timestamp": 1474489282537,
+      "type": 'call',
+      "timestamp": 1_474_489_282_537,
       "severity": 3, # error
-      "message": "Service Call failed with error: timeout",
-      "tracking_id": "<UUID>",
-      "service": "keystore",
-      "event": "get", # The operation id
+      "message": 'Service Call failed with error: timeout',
+      "tracking_id": '<UUID>',
+      "service": 'keystore',
+      "event": 'get', # The operation id
       "data": { # Type specific
-        "request": "{..}",
-        "response": "{..}",
-        "code": 504
-      }
+        "request": '{..}',
+        "response": '{..}',
+        "code": 504,
+      },
     }
   end
 
   def example_type_event
     {
-      "type": "event",
-      "timestamp": 1474489282537,
+      "type": 'event',
+      "timestamp": 1_474_489_282_537,
       "severity": 3, # error
-      "message": "Event trigger failed with: event handler not found",
-      "tracking_id": "<UUID>",
-      "service": "timer",
-      "event": "timer",
+      "message": 'Event trigger failed with: event handler not found',
+      "tracking_id": '<UUID>',
+      "service": 'timer',
+      "event": 'timer',
       "data": { # Type specific
-        "request": "<incoming payload>",
-        "response": "<lua response payload>",
-        "code": 404
-      }
+        "request": '<incoming payload>',
+        "response": '<lua response payload>',
+        "code": 404,
+      },
     }
   end
 
-  def example_type_config_deviceV1
+  def example_type_config_device_v1
     {
-      "type": "config",
-      "timestamp": 1474489282537,
+      "type": 'config',
+      "timestamp": 1_474_489_282_537,
       "severity": 4, # warning
       "message": "The service 'Device' used by the solution has been deprecated. Refer to the Service documentation for more information.",
-      "tracking_id": "<UUID>",
-      "service": "deviceV1",
+      "tracking_id": '<UUID>',
+      "service": 'deviceV1',
       "event": nil,
-      "data": { }
+      "data": {},
     }
   end
 
   def example_type_config_null
     {
-      "type": "config",
-      "timestamp": 1474489282537,
+      "type": 'config',
+      "timestamp": 1_474_489_282_537,
       "severity": 5, # notice
-      "message": "The module ‘util’ has been updated",
-      "tracking_id": "<UUID>",
+      "message": 'The module ‘util’ has been updated',
+      "tracking_id": '<UUID>',
       "service": nil, # if eventhandler here fill the service alias
       "event": nil, # if eventhandler script here fill the event
       "data": {
-        "module": "util",
-        "code": 200
-      }
+        "module": 'util',
+        "code": 200,
+      },
     }
   end
 
   def example_type_config_newservice
     {
-      "type": "config",
-      "timestamp": 1474489282537,
+      "type": 'config',
+      "timestamp": 1_474_489_282_537,
       "severity": 5, # notice
-      "message": "The service ‘newservice’ has been added to the solution",
-      "tracking_id": "<UUID>",
-      "service": "newservice",
+      "message": 'The service ‘newservice’ has been added to the solution',
+      "tracking_id": '<UUID>',
+      "service": 'newservice',
       "event": nil,
       "data": {
         "parameters": {},
-        "code": 200
-      }
+        "code": 200,
+      },
     }
   end
 
   def example_severity_build(severity)
     {
-      "type": "config",
-      "timestamp": 1474489282537,
+      "type": 'config',
+      "timestamp": 1_474_489_282_537,
       "severity": severity,
-      "message": "The service ‘newservice’ has been added to the solution",
-      "tracking_id": "<UUID>",
-      "service": "websocket",
-      "event": "/api/v1/foo/long/event/name",
+      "message": 'The service ‘newservice’ has been added to the solution',
+      "tracking_id": '<UUID>',
+      "service": 'websocket',
+      "event": '/api/v1/foo/long/event/name',
       "data": {
         "parameters": {},
-        "code": 200
-      }
+        "code": 200,
+      },
     }
   end
 end

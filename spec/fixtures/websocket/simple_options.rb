@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 # Copyright © 2016-2017 Exosite LLC. All Rights Reserved
 # frozen_string_literal: true
 
@@ -46,16 +45,19 @@ module SimpleWebSocket
     def opt_setup_behavior(parser)
       parser.on(
         '-b',
-        '--behavior FLAVOR', "[reserved] How to behave. We probably don't need this..."
+        '--behavior FLAVOR',
+        "[reserved] How to behave. We probably don't need this..."
       ) do |flavor|
         @options[:behave] = flavor
       end
     end
 
     def opt_setup_port(parser)
+      def_port = SimpleWebSocket::Server::DEFAULT_WS_PORT
       parser.on(
         '-p',
-        '--port PORT', "Port on which to run server. Default: #{}"
+        '--port PORT',
+        "Port on which to run server. Default: #{def_port}"
       ) do |msecs|
         @options[:timeout] = msecs.to_i / 1000.0
       end
@@ -64,7 +66,8 @@ module SimpleWebSocket
     def opt_setup_timeout(parser)
       parser.on(
         '-t',
-        '--timeout MSECS', 'How long to run before exiting. O to run forever.'
+        '--timeout MSECS',
+        'How long to run before exiting. O to run forever.'
       ) do |msecs|
         @options[:timeout] = msecs.to_i / 1000.0
       end

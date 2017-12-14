@@ -128,6 +128,7 @@ Naming/FileName:
     - 'lib/MrMurano/Exchange-Element.rb'
     - 'lib/MrMurano/Gateway.rb'
     - 'lib/MrMurano/Keystore.rb'
+    - 'lib/MrMurano/Logs.rb'
     - 'lib/MrMurano/Mock.rb'
     - 'lib/MrMurano/Passwords.rb'
     - 'lib/MrMurano/ProjectFile.rb'

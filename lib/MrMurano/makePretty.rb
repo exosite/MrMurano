@@ -81,7 +81,7 @@ module MrMurano
 
     def self.MakePrettyLogsV2(line, options)
       out = log_pretty_assemble_header(line, options)
-      out += log_pretty_assemble_body(line, options)
+      out + log_pretty_assemble_body(line, options)
     end
 
     def self.fmt_text_padded(text, style, out, raw, min_width: 0)
@@ -99,8 +99,8 @@ module MrMurano
       out, raw = log_pretty_header_add_log_record_type(line, out, raw, options)
       out, raw = log_pretty_header_add_event_timestamp(line, out, raw, options)
       out, raw = log_pretty_header_add_murano_tracking(line, out, raw, options)
-      out, raw = log_pretty_header_add_a_service_event(line, out, raw, options)
-      out += "\n"
+      out, _raw = log_pretty_header_add_a_service_event(line, out, raw, options)
+      out + "\n"
     end
 
     def self.log_pretty_header_add_abbreviated_sev(line, out, raw, _options)
@@ -112,41 +112,41 @@ module MrMurano
     end
 
     def self.fmt_abbreviated_severity(severity, out, raw, min_width: 7)
-      abbrev, loquac, style = styled_severity(severity)
+      abbrev, _loquac, style = styled_severity(severity)
       fmt_text_padded(abbrev, style, out, raw, min_width: min_width)
     end
 
     def self.fmt_loquacious_severity(severity, min_width: 11)
-      abbrev, loquac, style = styled_severity(severity)
+      _abbrev, loquac, style = styled_severity(severity)
       fmt_text_padded(loquac, style, out, raw, min_width: min_width)
     end
 
     def self.styled_severity(severity)
       case severity
-        when 0 # Emergency: system is unusable
-          ["EMERG", "EMERGENCY", %i[red bold on_white]]
-        when 1 # Alert: action must be taken immediately
-          ["ALERT", "ALERT", %i[red bold]]
-        when 2 # Critical: critical conditions
-          ["CRIT", "CRITICAL", %i[red bold]]
-        when 3 # Error: error conditions
-          ["ERROR", "ERROR", %i[red]]
-        when 4 # Warning: warning conditions
-          ["WARN", "WARNING", %i[yellow]]
-        when 5 # Notice: normal but significant condition
-          ["NOTE", "NOTICE", %i[white]]
-        when 6 # Informational: informational messages
-          ["INFO", "INFO", %i[blue]]
-        when 7 # Debug: debug-level messages ]
-          ["DEBUG", "DEBUG", %i[green]]
-        else
-          ["????#{severity}", "????#{severity}", %i[red]]
+      when 0 # Emergency: system is unusable
+        ['EMERG', 'EMERGENCY', %i[red bold on_white]]
+      when 1 # Alert: action must be taken immediately
+        ['ALERT', 'ALERT', %i[red bold]]
+      when 2 # Critical: critical conditions
+        ['CRIT', 'CRITICAL', %i[red bold]]
+      when 3 # Error: error conditions
+        ['ERROR', 'ERROR', %i[red]]
+      when 4 # Warning: warning conditions
+        ['WARN', 'WARNING', %i[yellow]]
+      when 5 # Notice: normal but significant condition
+        ['NOTE', 'NOTICE', %i[white]]
+      when 6 # Informational: informational messages
+        ['INFO', 'INFO', %i[blue]]
+      when 7 # Debug: debug-level messages ]
+        ['DEBUG', 'DEBUG', %i[green]]
+      else
+        ["????#{severity}", "????#{severity}", %i[red]]
       end
     end
 
     def self.log_pretty_header_add_log_record_type(line, out, raw, _options)
-      logType = line[:type].to_s.empty? && '--' || line[:type]
-      fmt_text_padded(logType.upcase, :magenta, out, raw, min_width: 10)
+      log_type = line[:type].to_s.empty? && '--' || line[:type]
+      fmt_text_padded(log_type.upcase, :magenta, out, raw, min_width: 10)
     end
 
     def self.log_pretty_header_add_event_timestamp(line, out, raw, options)
@@ -175,7 +175,7 @@ module MrMurano
 
     def self.log_pretty_header_add_murano_tracking(line, out, raw, options)
       return [out, raw] unless options.tracking
-      tid = line[:tracking_id].to_s.empty? && '--------' || line[:tracking_id].slice(0,8)
+      tid = line[:tracking_id].to_s.empty? && '--------' || line[:tracking_id].slice(0, 8)
       fmt_text_padded(tid, :yellow, out, raw, min_width: 10)
     end
 
@@ -195,10 +195,10 @@ module MrMurano
       out += log_pretty_assemble_message(line, options)
       out += log_pretty_assemble_data(line, options)
       out += log_pretty_assemble_remainder(line, options)
-      out += log_pretty_assemble_tracking_id(line, options)
+      out + log_pretty_assemble_tracking_id(line, options)
     end
 
-    def self.log_pretty_assemble_message(line, options)
+    def self.log_pretty_assemble_message(line, _options)
       return '' unless line.key?(:message) && !line[:message].to_s.empty?
       @body_prefix + line[:message] + "\n"
     end
@@ -210,7 +210,7 @@ module MrMurano
         out = ''
         out += log_pretty_emphasize_entry(:request, data, options)
         out += log_pretty_emphasize_entry(:response, data, options)
-        out += log_pretty_data_remainder(data, options)
+        out + log_pretty_data_remainder(data, options)
       else
         data.to_s
       end
@@ -221,7 +221,7 @@ module MrMurano
       out = @body_prefix + "---------\n"
       out += @body_prefix + "#{entry}: "
       out += log_pretty_json(hash[entry], options)
-      out += "\n"
+      out + "\n"
     end
 
     def self.log_pretty_data_remainder(data, options)
@@ -232,7 +232,7 @@ module MrMurano
       data = data.reject { |key, _val| known_keys.include?(key) }
       return '' if data.empty?
       out = @body_prefix + "---------\n"
-      out += @body_prefix + 'data: ' + log_pretty_json(data, options) + "\n"
+      out + @body_prefix + 'data: ' + log_pretty_json(data, options) + "\n"
     end
 
     def self.log_pretty_assemble_remainder(line, options)

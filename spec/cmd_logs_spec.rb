@@ -36,24 +36,25 @@ RSpec.describe 'murano logs', :cmd, :needs_password do
 
   def stub_request_token
     stub_request(:post, "http://127.0.0.1#{@port_s}/api:1/token/")
-    .with(
-      body: '{"email":"bob","password":"v"}',
-      headers: {
-        'Accept'=>'*/*',
-        'Accept-Encoding'=>'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
-        'Content-Type'=>'application/json',
-        # 'Host'=>'ABC',
-        'Host'=>"127.0.0.1#{@port_s}",
-        'User-Agent'=>'MrMurano/3.0.7'
-      })
-    .to_return(
-      status: 200, body: { token: 'ABCDEFGHIJKLMNOP' }.to_json, headers: {}
-    )
+      .with(
+        body: '{"email":"bob","password":"v"}',
+        headers: {
+          'Accept' => '*/*',
+          'Accept-Encoding' => 'gzip;q=1.0,deflate;q=0.6,identity;q=0.3',
+          'Content-Type' => 'application/json',
+          # 'Host'=>'ABC',
+          'Host' => "127.0.0.1#{@port_s}",
+          'User-Agent' => 'MrMurano/3.0.7',
+        }
+      )
+      .to_return(
+        status: 200, body: { token: 'ABCDEFGHIJKLMNOP' }.to_json, headers: {}
+      )
   end
 
   def spawn_websocket_server
     ws_svr = "#{File.dirname(__FILE__)}/fixtures/websocket/wss-echo.rb"
-    @wss_in, @wss_out, @wss_err, @wss_thr = Open3.popen3("#{ws_svr}")
+    @wss_in, @wss_out, @wss_err, @wss_thr = Open3.popen3(ws_svr.to_s)
     @wss_out.close
     @wss_err.close
     await_websocket_server!
@@ -68,6 +69,7 @@ RSpec.describe 'murano logs', :cmd, :needs_password do
         s.close
         ready = true
         break
+      # rubocop:disable Lint/HandleExceptions: Do not suppress exceptions.
       rescue Errno::ECONNREFUSED, Errno::EHOSTUNREACH
         # pass
       end
@@ -77,12 +79,12 @@ RSpec.describe 'murano logs', :cmd, :needs_password do
   end
 
   def spawn_logs_stream_test_simple
-    Thread::abort_on_exception = true
+    Thread.abort_on_exception = true
     @svr_thd = Thread.new { logs_stream_test_simple }
   end
 
   def logs_stream_test_simple
-    sleep 0.1 while !EM.reactor_running?
+    sleep 0.1 until EM.reactor_running?
     @blatherer = LogsFaker.new
     sleep 0.1
     @wss_in.puts JSON.generate(@blatherer.example_type_script)
@@ -91,13 +93,13 @@ RSpec.describe 'murano logs', :cmd, :needs_password do
     sleep 0.1
     @wss_in.puts JSON.generate(@blatherer.example_type_event)
     sleep 0.1
-    @wss_in.puts JSON.generate(@blatherer.example_type_config_deviceV1)
+    @wss_in.puts JSON.generate(@blatherer.example_type_config_device_v1)
     sleep 0.1
     @wss_in.puts JSON.generate(@blatherer.example_type_config_null)
     sleep 0.1
     @wss_in.puts JSON.generate(@blatherer.example_type_config_newservice)
     sleep 0.1
-    @wss_in.puts "EXIT" 
+    @wss_in.puts 'EXIT'
     @wss_in.close
   end
 
@@ -117,17 +119,17 @@ RSpec.describe 'murano logs', :cmd, :needs_password do
 
   def wait_websocket_server
     # Block 'til subprocess exits. Receives a Process::Status.
-    proc_status = @wss_thr.value
+    _proc_status = @wss_thr.value
   end
 
   def expect_output
-    expect(@cmd_err).to eq(%(WebSocket closed [1006]\n)) 
+    expect(@cmd_err).to eq(%(WebSocket closed [1006]\n))
     expect(@cmd_out).to eq(
       %(
 message: #{JSON.generate(@blatherer.example_type_script)}
 message: #{JSON.generate(@blatherer.example_type_call)}
 message: #{JSON.generate(@blatherer.example_type_event)}
-message: #{JSON.generate(@blatherer.example_type_config_deviceV1)}
+message: #{JSON.generate(@blatherer.example_type_config_device_v1)}
 message: #{JSON.generate(@blatherer.example_type_config_null)}
 message: #{JSON.generate(@blatherer.example_type_config_newservice)}
       ).strip + "\n"
