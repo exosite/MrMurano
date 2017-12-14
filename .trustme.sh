@@ -67,6 +67,11 @@ KILL_BIN=".trustme.kill!"
 #BUILD_DELAY_SECS=1
 BUILD_DELAY_SECS=0
 
+# This script is run relative to Vim's working directory, so be deliberate about paths.
+# ${BASH_SOURCE[0]} should be the absolute path to this script.
+TRUSTME_DIR=$(dirname -- "${BASH_SOURCE[0]}")
+OUT_FILE="${TRUSTME_DIR}/${OUT_FILE}"
+
 say() {
   echo "$1" >> "${OUT_FILE}"
 }
@@ -234,8 +239,8 @@ ctags_it() {
     --exclude=docs \
     --exclude=pkg \
     --exclude=report \
-    --exclude=spec \
     --verbose=yes
+    #--exclude=spec \
   /bin/ls -la tags >> ${OUT_FILE}
 }
 
