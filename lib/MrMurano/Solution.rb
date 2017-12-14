@@ -52,7 +52,7 @@ module MrMurano
     ## Generate an endpoint in Murano
     # Uses the uriparts and path
     # @param path String: any additional parts for the URI
-    # @return URI: The full URI for this enpoint.
+    # @return URI: The full URI for this endpoint.
     def endpoint(path='')
       super
       parts = [$cfg['net.protocol'] + ':/', $cfg['net.host'], 'api:1'] + @uriparts
