@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# License: PROPRIETARY. See LICENSE.txt.
+# Unauthorized copying of this file is strictly prohibited.
+# vim:tw=0:ts=2:sw=2:et:ai
 
 require 'MrMurano/Commander-Entry'
 

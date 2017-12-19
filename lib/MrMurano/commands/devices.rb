@@ -1,11 +1,11 @@
-# Last Modified: 2017.10.04 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
-require 'date'
+require 'time'
 require 'MrMurano/Gateway'
 require 'MrMurano/ReCommander'
 
@@ -232,7 +232,7 @@ Enables Identifiers, creating devices, or digital shadows, in Murano.
       # representing microseconds since the epoch, e.g.,
       #    hours * mins/hour * secs/min * msec/sec * μsec/msec
       # or hours * 60        * 60       * 1000     * 1000
-      micros_since_epoch = DateTime.now.strftime('%Q').to_i * 1000
+      micros_since_epoch = (Time.now.to_f * 1_000_000).to_i
       mircos_until_purge = options.expire.to_i * 60 * 60 * 1000 * 1000
       options.expire = micros_since_epoch + mircos_until_purge
     end

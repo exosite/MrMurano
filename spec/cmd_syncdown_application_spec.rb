@@ -1,13 +1,12 @@
-# Last Modified: 2017.09.28 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'fileutils'
 require 'open3'
-require 'pathname'
 require 'cmd_common'
 
 # NOTE: This file is a copy of, and subset of, cmd_syncdown_both_spec.rb.
@@ -48,8 +47,8 @@ RSpec.describe 'murano single sync', :cmd, :needs_password do
       expect(out_lines).to match_array(
         [
           "Adding item table_util\n",
-          a_string_starting_with('Updating item '),
-          "Updating item user_account\n",
+          "Removing item user_account\n",
+          "Updating item timer_timer\n",
           "Adding item POST_/api/fire\n",
           "Adding item PUT_/api/fire/{code}\n",
           "Adding item DELETE_/api/fire/{code}\n",
@@ -71,9 +70,7 @@ RSpec.describe 'murano single sync', :cmd, :needs_password do
       expect(out_lines).to match_array(
         [
           "Adding item table_util\n",
-          # 2017-08-08: This says updating now because timer.timer is undeletable.
-          #"Adding item timer_timer\n",
-          "Updating item timer_timer\n",
+          "Adding item timer_timer\n",
           "Adding item POST_/api/fire\n",
           "Adding item DELETE_/api/fire/{code}\n",
           "Adding item PUT_/api/fire/{code}\n",

@@ -1,13 +1,12 @@
-# Last Modified: 2017.09.25 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'fileutils'
 require 'open3'
-require 'pathname'
 require 'cmd_common'
 
 RSpec.describe 'murano syncdown', :cmd, :needs_password do
@@ -84,14 +83,11 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
       expect(out_lines).to match_array(
         [
           "Adding item table_util\n",
-          "Updating item timer_timer\n",
-          # E.g., "Updating item i4kl64nn86xk00000_event\n":
+          # Removes: user_account, ijf5pb3juwd40000_event
+          a_string_starting_with('Removing item '),
+          a_string_starting_with('Removing item '),
+          # Updates: timer_timer
           a_string_starting_with('Updating item '),
-          "Updating item tsdb_exportJob\n",
-          "Updating item user_account\n",
-          # FIXME/2017-08-09: This test includes a fixture with "device2 data_in",
-          # which is deprecated, AFAIK [lb]. We convert it to "device2.event",
-          # but I think what we really want is to edit "<solution_id>.event".
           "Adding item device2_event\n",
           "Adding item POST_/api/fire\n",
           "Adding item PUT_/api/fire/{code}\n",
@@ -115,10 +111,9 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
       out_lines = out.lines.map { |line| strip_fancy(line) }
       expect(out_lines).to match_array(
         [
+          "Updating local product resources\n",
           "Adding item table_util\n",
-          # 2017-08-08: This says updating now because timer.timer is undeletable.
-          #"Adding item timer_timer\n",
-          "Updating item timer_timer\n",
+          "Adding item timer_timer\n",
           "Adding item POST_/api/fire\n",
           "Adding item DELETE_/api/fire/{code}\n",
           "Adding item PUT_/api/fire/{code}\n",
@@ -128,16 +123,6 @@ RSpec.describe 'murano syncdown', :cmd, :needs_password do
           "Adding item /\n",
         ]
       )
-      # Look for skipping missing location lines, e.g.,
-      #   "\e[33mSkipping missing location /tmp/d20170623-20035-17496y/project/modules\e[0m\n"
-      # 2017-07-03: Did I [lb] change syncdown not to complain about missing locations?
-      #expect(err.lines).to include(
-      #  a_string_ending_with("routes\e[0m\n"),
-      #  a_string_ending_with("files\e[0m\n"),
-      #  a_string_ending_with("modules\e[0m\n"),
-      #  a_string_ending_with("services\e[0m\n"),
-      #)
-      #expect(err).to eq('')
       expect(strip_fancy(err)).to start_with("\e[33mSkipping missing location '")
       expect(status.exitstatus).to eq(0)
 

@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 source 'http://rubygems.org'
 
@@ -12,7 +12,8 @@ source 'http://rubygems.org'
 gem 'certified', '1.0.0'
 gem 'commander', '~> 4.4.3'
 gem 'dotenv', '~> 2.1.1'
-#gem 'eventmachine', '~> 1.2.3'
+gem 'eventmachine', '~> 1.2.5'
+gem 'faye-websocket', '~> 0.10.7'
 gem 'highline', '~> 1.7.8'
 gem 'http-form_data', '~> 1.0.3'
 gem 'inflecto'
@@ -44,6 +45,7 @@ group :test do
   gem 'rubocop', '~> 0.49.1'
   gem 'simplecov', require: false
   gem 'webmock', '~> 2.3.0'
+  gem 'websocket-driver', '~> 0.7.0'
   #gem 'vcr'
   gem 'yard'
 end

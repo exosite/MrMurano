@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'highline'
 # Set HighLine's $terminal global.
@@ -21,14 +21,39 @@ require 'MrMurano/Config'
 # - Also print warning if spec exits, which rspec doesn't see as wrong.
 # - Note that this comes before importing Commander.
 $exited_abnormally = false
+
+def capture_stdio
+  $murcli_wasout = $stdout
+  $murcli_waserr = $stderr
+  $murcli_wasterm = $terminal
+end
+capture_stdio
+
+def restore_stdio
+  $stdout = $murcli_wasout
+  $stderr = $murcli_waserr
+  $terminal = $murcli_wasterm
+end
+
 at_exit do
   if $exited_abnormally
-    STDERR.puts('¡!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    STDERR.puts('¡Unexpected spec exit killed rspec!')
-    STDERR.puts('¡!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    restore_stdio
+    warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    warn(%(         ____                      ))
+    warn(%{       ,%(   Y`.                   })
+    warn(%(      /        \                   ))
+    warn(%(      \ ()  () /                   ))
+    warn(%{       `. /\ ,%(                   })
+    warn(%(   8====| "" |====8                ))
+    warn(%(        `LLLU'                     ))
+    warn(%(                                   ))
+    warn('¡Unexpected spec exit killed rspec!')
+    warn('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    # DEVs: If you see this message, the last test exited unexpectedly.
   end
 end
 alias original_at_exit at_exit unless defined?(original_at_exit)
+
 def at_exit(*args, &block)
   #original_at_exit *args, &block
   # pass!
@@ -112,7 +137,7 @@ RSpec.shared_context 'CI_CMD' do
       #  RbConfig::CONFIG['host_os'] =~ /mswin|msys|mingw|cygwin|bccwin|wince|emc/
       #)
       unless OS.windows?
-        $stderr.puts(
+        warn(
           'Unexpected: ln_s failed on non-Windows machine / ' \
           "host_os: #{RbConfig::CONFIG['host_os']} / err: #{err}"
         )
@@ -247,9 +272,7 @@ RSpec.shared_context 'CI_CMD' do
     # FIXME: Remember the setting and re-enable.
     WebMock.allow_net_connect!
 
-    wasout = $stdout
-    waserr = $stderr
-    wasterm = $terminal
+    capture_stdio
     tmpout = StringIO.new
     tmperr = StringIO.new
 
@@ -262,15 +285,19 @@ RSpec.shared_context 'CI_CMD' do
     $stdout = tmpout
     $stderr = tmperr
 
+    $exited_abnormally = true
+
     # When Commander is loaded, it sets an at_exit hook, which we monkey
     # patch in ReCommander. Since Config.validate_cmd is called before
     # at_exit, it uses runner.command_exit to tell ReCommander's at_exit
     # monkey patch not to call Commander.run!. Via rspec, we don't use the
     # at_exit hook, or ReCommander.
-    $cfg = MrMurano::Config.new(::Commander::Runner.instance)
-    $cfg.load
-    $cfg.validate_cmd(cmd)
+    if $cfg.nil?
+      $cfg = MrMurano::Config.new(::Commander::Runner.instance)
+      $cfg.load
+    end
     $cfg['tool.no-progress'] = true
+    $cfg.validate_cmd(cmd)
     runner = ::Commander::Runner.instance
     unless defined?(runner.command_exit) && runner.command_exit
       # Commander's at_exit hook calls runner.run! which runs the command
@@ -281,7 +308,6 @@ RSpec.shared_context 'CI_CMD' do
       when_called = the_cmd.peek_when_called.dup
 
       runner.force_args(args.dup)
-      $exited_abnormally = true
       #runner.parse_global_options
       if wont_parse
         expect { runner.old_parse_global_options }.to raise_error(SystemExit)
@@ -291,10 +317,15 @@ RSpec.shared_context 'CI_CMD' do
         if wont_run
           expect { the_cmd.run(*args) }.to raise_error(SystemExit)
         else
-          the_cmd.run(*args)
+          begin
+            the_cmd.run(*args)
+          rescue StandardError => _err
+            # This is unexpected. Leave $exited_abnormally so we warn the user.
+            restore_stdio
+            raise
+          end
         end
       end
-      $exited_abnormally = false
 
       # Reset proxy_options otherwise Commander::Command.call
       # uses them the next time this command is called.
@@ -303,11 +334,11 @@ RSpec.shared_context 'CI_CMD' do
     end
     runner.command_exit = nil
 
+    $exited_abnormally = false
     # Ruby provides std i/o constants, so we could do this:
     #   $stdout, $stderr = STDOUT, STDERR
-    $stdout = wasout
-    $stderr = waserr
-    $terminal = wasterm
+    restore_stdio
+
     [strip_color(tmpout.string), strip_color(tmperr.string)]
   end
 

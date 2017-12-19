@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'MrMurano/Config'
 
@@ -84,3 +84,11 @@ global_option('-V', '--verbose', %(Be chatty)) do
   $cfg['tool.verbose'] = true
 end
 
+global_option('--debug', %(Show debug messages)) do
+  $cfg['tool.debug'] = true
+end
+
+global_option('--sid VALUE', %(Override application or product ID)) do |value|
+  $cfg['application.id'] = value
+  $cfg['product.id'] = value
+end

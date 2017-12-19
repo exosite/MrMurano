@@ -1,13 +1,14 @@
-# Last Modified: 2017.09.11 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'http/form_data'
 require 'json-schema'
 require 'net/http'
+require 'pathname'
 require 'uri'
 require 'MrMurano/hash'
 require 'MrMurano/http'
@@ -42,7 +43,7 @@ module MrMurano
       # @return URI: The full URI for this enpoint.
       def endpoint(path='')
         super
-        parts = ['https:/', $cfg['net.host'], 'api:1'] + @uriparts
+        parts = [$cfg['net.protocol'] + ':/', $cfg['net.host'], 'api:1'] + @uriparts
         s = parts.map(&:to_s).join('/')
         URI(s + path.to_s)
       end
@@ -168,11 +169,12 @@ module MrMurano
       end
 
       def syncup_after
-        super
+        num_synced = super
         if !@there.empty?
           if !$cfg['tool.dry']
-            sync_update_progress('Updating product resources')
+            sync_update_progress('Updating remote product resources')
             upload_all(@there)
+            num_synced += 1
           else
             MrMurano::Verbose.whirly_interject do
               say('--dry: Not updating resources')
@@ -184,6 +186,7 @@ module MrMurano
           end
         end
         @there = nil
+        num_synced
       end
 
       ###################################################
@@ -234,12 +237,14 @@ module MrMurano
       end
 
       def syncdown_after(local)
-        super
-        resources_write(local)
+        num_synced = super
+        num_synced += resources_write(local)
         @here = nil
+        num_synced
       end
 
       def resources_write(file_path)
+        num_synced = 0
         # User can blow away specs/ directory if they want; we'll just make
         # a new one. [This code somewhat copy-paste from make_directory.]
         basedir = file_path
@@ -263,16 +268,22 @@ module MrMurano
           return
         end
 
+        sync_update_progress('Updating local product resources')
+
         file_path.open('wb') do |io|
           # convert array to hash
           res = {}
           @here.each do |value|
             key = value[:alias]
-            res[key] = Hash.transform_keys_to_strings(value.reject { |k, _v| k == :alias })
+            res[key] = Hash.transform_keys_to_strings(
+              value.reject { |k, _v| k == :alias }
+            )
           end
           ohash = ordered_hash(res)
           io.write ohash.to_yaml
         end
+
+        num_synced + 1
       end
 
       def diff_item_write(io, _merged, local, remote)
@@ -397,7 +408,7 @@ module MrMurano
             props[:auth][:expire] = Integer(opts[:expire])
           rescue ArgumentError
             # Callers should prevent this, so ugly raise is okay.
-            raise ':expire option is not a valid number: #{fancy_ticks(opts[:expire])}'
+            raise ":expire option is not a valid number: #{fancy_ticks(opts[:expire])}"
           end
         end
         unless opts[:type].nil?

@@ -1,11 +1,9 @@
-# Last Modified: 2017.07.03 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# frozen_string_literal: probably not yet
-
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'highline/import'
 require 'MrMurano/hash'
@@ -20,6 +18,7 @@ class VTst
     @token = nil
   end
 end
+
 RSpec.describe MrMurano::Verbose do
   include_context 'WORKSPACE'
 
@@ -47,13 +46,16 @@ RSpec.describe MrMurano::Verbose do
   end
 
   it 'warns' do
-    expect($stderr).to receive(:puts).with("\e[33mhello\e[0m").once
-    @tst.warning 'hello'
+    # 2017-12-14 (landonb): Not sure what changed, but this stopped working:
+    #   expect($stderr).to receive(:say).with("\e[33mhello\e[0m").once
+    #   @tst.warning 'hello'
+    # I tried receive(:warn), and expect($terminal), but for naught.
+    # Wrapping the call in the expect does the trick, though.
+    expect { @tst.warning 'hello' }.to output("\e[33mhello\e[0m\n").to_stderr
   end
 
   it 'errors' do
-    expect($stderr).to receive(:puts).with("\e[31mhello\e[0m").once
-    @tst.error 'hello'
+    expect { @tst.error 'hello' }.to output("\e[31mhello\e[0m\n").to_stderr
   end
 
   context 'tabularize' do

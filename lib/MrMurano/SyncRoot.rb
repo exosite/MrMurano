@@ -1,9 +1,9 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 module MrMurano
   ## Track what things are syncable.
@@ -42,7 +42,7 @@ module MrMurano
       #@syncset.each do |a|
       #  if a.name == name.to_s
       #    msg = %{WARNING: SyncRoot.add called more than once for name "#{a.name}"}
-      #    $stderr.puts HighLine.color(msg, :yellow)
+      #    warn HighLine.color(msg, :yellow)
       #  end
       #end
       # We should at least enforce a unique type policy,

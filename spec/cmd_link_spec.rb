@@ -1,16 +1,16 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'fileutils'
 require 'open3'
-require 'pathname'
 
 require 'cmd_common'
 require 'MrMurano/Config'
+require 'MrMurano/commands/link'
 
 RSpec.describe 'murano link', :cmd, :needs_password do
   include_context 'CI_CMD'
@@ -36,11 +36,10 @@ RSpec.describe 'murano link', :cmd, :needs_password do
 
       context 'using commander' do
         it 'will not list' do
-          stdout, stderr = murano_command_run('link list')
-          expect(stdout).to eq(MrMurano::Config::INVALID_PROJECT_HINT + "\n")
-          expect(stderr).to eq(
-            %(The "link list" command only works in a Murano project.\n)
-          )
+          # Because we run from the context of the rspec command, the :env
+          # config file will have loaded, so business.id will be set.
+          expect { murano_command_run('link list') }.to raise_error(SystemExit)
+          $exited_abnormally = false
         end
       end
     end
@@ -52,7 +51,6 @@ RSpec.describe 'murano link', :cmd, :needs_password do
 
     it 'links and lists' do
       out, err, status = Open3.capture3(capcmd('murano', 'assign', 'set'))
-      #expect(out).to a_string_starting_with("Linked product #{@solz_name}")
       olines = out.lines
 
       expect(strip_fancy(olines[0])).to eq(
@@ -88,7 +86,8 @@ RSpec.describe 'murano link', :cmd, :needs_password do
       #expect(out).to a_string_starting_with("Unlinked #{@solz_name}")
       # E.g.,
       #   Unlinked ‘linktest3e7def1b86a1d680’ from ‘linktest3e7def1b86a1d680’\n
-      #   Removed ‘h2thqll2z9sqoooc0_w4w3vxla11ngg4cok_event’ from ‘linktest3e7def1b86a1d680\n
+      #   Removed ‘h2thqll2z9sqoooc0_w4w3vxla11ngg4cok_event’
+      #     from ‘linktest3e7def1b86a1d680\n
       olines = out.lines
       expect(strip_fancy(olines[0])).to eq(
         "Unlinked '#{@proj_name_prod}' from '#{@proj_name_appy}'\n"

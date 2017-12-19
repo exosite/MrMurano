@@ -1,13 +1,12 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'fileutils'
 require 'open3'
-require 'pathname'
 require 'cmd_common'
 
 RSpec.describe 'murano device', :cmd, :needs_password do
@@ -93,7 +92,7 @@ RSpec.describe 'murano device', :cmd, :needs_password do
     )
 
     out, err, status = Open3.capture3(capcmd('murano', 'syncup', '--resources'))
-    expect(out).to eq("Adding item state\nAdding item temperature\nAdding item uptime\nAdding item humidity\nUpdating product resources\n")
+    expect(out).to eq("Adding item state\nAdding item temperature\nAdding item uptime\nAdding item humidity\nUpdating remote product resources\n")
     expect(err).to eq('')
     expect(status.exitstatus).to eq(0)
 

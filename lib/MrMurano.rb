@@ -1,9 +1,9 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 # 2017-07-01: This ordered list hacks around having
 # individual files include all the files they need.
@@ -30,6 +30,7 @@ require 'MrMurano/Passwords'
 require 'MrMurano/Content'
 require 'MrMurano/Gateway'
 require 'MrMurano/Keystore'
+require 'MrMurano/Logs'
 require 'MrMurano/Mock'
 require 'MrMurano/Setting'
 require 'MrMurano/Settings-HttpService'
@@ -46,6 +47,8 @@ require 'MrMurano/Webservice-File'
 require 'MrMurano/SyncAllowed'
 require 'MrMurano/SyncRoot'
 require 'MrMurano/SyncUpDown'
+require 'MrMurano/SyncUpDown-Core'
+require 'MrMurano/SyncUpDown-Item'
 
 require 'MrMurano/SubCmdGroupContext'
 require 'MrMurano/ReCommander'

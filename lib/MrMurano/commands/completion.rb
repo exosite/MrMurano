@@ -1,9 +1,9 @@
-# Last Modified: 2017.08.16 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'erb'
 require 'pp'
@@ -77,7 +77,7 @@ class ::Commander::Runner
   # Get maximum depth of sub-commands.
   def cmdMaxDepth
     depth = 0
-    @commands.sort.each do |name, _cmd|
+    @commands.keys.sort.each do |name|
       levels = name.split
       depth = levels.count if levels.count > depth
     end
@@ -151,7 +151,7 @@ or
 #      end
 
     elsif options.subs
-      runner.instance_variable_get(:@commands).sort.each do |name, _cmd|
+      runner.instance_variable_get(:@commands).keys.sort.each do |name|
         #desc = _cmd.instance_variable_get(:@summary) #.lines[0]
         #say "#{name}:'#{desc}'"
         say name.to_s

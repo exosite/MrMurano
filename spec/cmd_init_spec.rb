@@ -1,13 +1,12 @@
-# Last Modified: 2017.09.12 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'fileutils'
 require 'open3'
-require 'pathname'
 require 'cmd_common'
 
 RSpec.describe 'murano init', :cmd do
@@ -52,7 +51,6 @@ RSpec.describe 'murano init', :cmd do
         "\n", # 10
       ]
     elsif has_no_solutions
-      # 2017-07-05: line numbers are for: context "without", :needs_password do / it "existing project" do
       expecting += [
         "This business does not have any applications. Let's create one\n", # 7
         "\n", # 8
@@ -109,20 +107,15 @@ RSpec.describe 'murano init', :cmd do
         "\n",
       ]
     end
-    #expecting += [
-    #  t.a_string_matching(%r{Adding item \w+_event\n}),
-    #  # Order not consistent...
-    #  #"Adding item tsdb_exportJob\n",
-    #  #"Adding item timer_timer\n",
-    #  #"Adding item user_account\n",
-    #  t.a_string_starting_with('Adding item '),
-    #  t.a_string_starting_with('Adding item '),
-    #  t.a_string_starting_with('Adding item '),
-    #  "Synced 4 items\n",
-    #  "\n",
-    #]
     expecting += [
-      "Items already synced\n",
+      # 2017-12-15: Currently:
+      #   services{product.id}_event.lua
+      #   services/user_account.lua
+      #   specs/resources.yaml
+      "Updating local product resources\n",
+      t.a_string_starting_with('Adding item '),
+      t.a_string_starting_with('Adding item '),
+      "Synced 3 items\n",
       "\n",
     ]
     expecting += [
@@ -227,10 +220,10 @@ RSpec.describe 'murano init', :cmd do
         # It will ask to create an application and product.
         # MAGIC_NUMBER: !!!! the 8 is hardcoded indention here !!!!
         #   (removes the leading whitespace from the <<-EOT heredoc)
-        data = <<-EOT.gsub(/^ {8}/, '')
+        data = <<-DATA.gsub(/^ {8}/, '')
         #{@applctn_name}
         #{@product_name}
-        EOT
+        DATA
         # 2017-07-05: [lb] added line numbers to use debugger to help maintain this test.
         out, err, status = Open3.capture3(capcmd('murano', 'init'), stdin_data: data)
         expecting = expected_response_when_ids_found_in_config(
@@ -332,9 +325,6 @@ RSpec.describe 'murano init', :cmd do
         self,
         expect_rebasing: true,
         creates_some_default_directories: true,
-        # Because the /tmp/murcli-test/services directory is empty,
-        # murano init *will* download all the event handlers.
-        #local_files_found: true,
       )
       out_lines = out.lines.map { |line| strip_fancy(line) }
       expect(out_lines).to match_array(the_expected)
@@ -360,9 +350,6 @@ RSpec.describe 'murano init', :cmd do
         expect_rebasing: true,
         expect_proj_file_write: false,
         creates_some_default_directories: true,
-        # Because the /tmp/murcli-test/services directory is empty,
-        # murano init *will* download all the event handlers.
-        #local_files_found: true,
       )
       out_lines = out.lines.map { |line| strip_fancy(line) }
       expect(out_lines).to match_array(expected)
@@ -396,15 +383,13 @@ RSpec.describe 'murano init', :cmd do
       end
       # The test account will have one business, one product, and one application.
       # So it won't ask any questions.
+      # NOTE: This tests uses an old Solutionfile.json, config v0.2.0, and it
+      # downloads Lua scripts to the root of the project directory. Just FYI.
       out, err, status = Open3.capture3(capcmd('murano', 'init'))
       expected = expected_response_when_ids_found_in_config(
         self,
         expect_rebasing: true,
         creates_some_default_directories: true,
-        # Because the /tmp/murcli-test/services directory is empty,
-        # murano init *will* download all the event handlers.
-        ##local_files_found_application: true,
-        #local_files_found_product: true,
       )
       out_lines = out.lines.map { |line| strip_fancy(line) }
       expect(out_lines).to match_array(expected)
@@ -444,10 +429,6 @@ RSpec.describe 'murano init', :cmd do
         self,
         expect_rebasing: true,
         creates_some_default_directories: true,
-        # Because the /tmp/murcli-test/services directory is empty,
-        # murano init *will* download all the event handlers.
-        ##local_files_found_application: true,
-        #local_files_found_product: true,
       )
       out_lines = out.lines.map { |line| strip_fancy(line) }
       expect(out_lines).to match_array(expected)

@@ -1,12 +1,13 @@
-# Last Modified: 2017.09.07 /coding: utf-8
+# Copyright © 2016-2017 Exosite LLC. All Rights Reserved
+# License: PROPRIETARY. See LICENSE.txt.
 # frozen_string_literal: true
 
-# Copyright © 2016-2017 Exosite LLC.
-# License: MIT. See LICENSE.txt.
-#  vim:tw=0:ts=2:sw=2:et:ai
+# vim:tw=0:ts=2:sw=2:et:ai
+# Unauthorized copying of this file is strictly prohibited.
 
 require 'json'
 require 'net/http'
+require 'pathname'
 require 'pp'
 require 'uri'
 require 'MrMurano/SyncRoot'
@@ -43,7 +44,7 @@ module MrMurano
       end
 
       ##
-      # This gets all data about all endpoints
+      # This gets all data about all endpoints.
       def list
         ret = get
         return [] unless ret.is_a?(Array)
@@ -68,6 +69,7 @@ module MrMurano
 
         ret[:content_type] = 'application/json' if ret[:content_type].empty?
 
+        add_terminating_nl = ret[:script].end_with? "\n"
         script = ret[:script].lines.map(&:chomp)
 
         aheader = (script.first || '')
@@ -93,7 +95,8 @@ module MrMurano
         end
         # otherwise current header is good.
 
-        script = script.join("\n") + "\n"
+        script = script.join("\n")
+        script += "\n" if add_terminating_nl
         if block_given?
           yield script
         else

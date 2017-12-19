@@ -177,7 +177,7 @@ class OrderedHash < ::Hash
             def to_yaml opts = {}
               begin
                 @__yaml_inline ? @__yaml_inline_meth[ opts ] : super
-              rescue
+              rescue StandardError
                 @to_yaml_style = :inline
                 super
               end

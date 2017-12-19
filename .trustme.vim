@@ -23,8 +23,27 @@
 "  autocmd BufWritePost <buffer> silent !./.trustme.sh &
 "augroup END
 
+" NOTE: The tags path cannot be relative.
 autocmd BufRead *.rb set tags=/exo/clients/exosite/exosite-murcli/tags
 
 "echomsg 'Calling trustme.sh'
-silent !./.trustme.sh &
+"echomsg "g:DUBS_TRUST_ME_ON_SAVE: " . g:DUBS_TRUST_ME_ON_SAVE
+"silent !./.trustme.sh &
+"silent !/exo/clients/exosite/exosite-murcli/.trustme.sh &
+
+" If you open from project.vim (via the magic in=""),
+" then neither of these globals will have been set
+" by dubs_edit_juice.vim.
+if !exists("g:DUBS_TRUST_ME_ON_FILE")
+  let g:DUBS_TRUST_ME_ON_FILE = '<project.vim>'
+endif
+if !exists("g:DUBS_TRUST_ME_ON_SAVE")
+  let g:DUBS_TRUST_ME_ON_SAVE = 0
+endif
+
+let s:cmd = '!' .
+  \ ' DUBS_TRUST_ME_ON_FILE=' . g:DUBS_TRUST_ME_ON_FILE .
+  \ ' DUBS_TRUST_ME_ON_SAVE=' . g:DUBS_TRUST_ME_ON_SAVE .
+  \ ' /exo/clients/exosite/exosite-murcli/.trustme.sh &'
+silent exec s:cmd
 
