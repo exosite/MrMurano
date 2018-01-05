@@ -23,9 +23,10 @@ class LogsCmd
     # Add global solution flag: --type [application|product].
     cmd_add_solntype_pickers(cmd, exclude_all: true)
     cmd_add_logs_options(cmd)
-    c.action do |args, options|
-      c.verify_arg_count!(args)
-      logs_action(options)
+    cmd.action do |args, options|
+      @options = options
+      cmd.verify_arg_count!(args)
+      logs_action
     end
   end
 
@@ -149,15 +150,15 @@ class LogsCmd
     c.option '--http', %(Use HTTP connection [deprecated; will be removed])
   end
 
-  def logs_action(options)
-    cmd_default_logs_options(options)
-    cmd_defaults_solntype_pickers(options, :application)
-    sol = cmd_get_sol!(options)
-    logs_display(sol, options)
+  def logs_action()
+    cmd_default_logs_options()
+    cmd_defaults_solntype_pickers(:application)
+    sol = cmd_get_sol!()
+    logs_display(sol)
   end
 
-  def cmd_default_logs_options(options)
-    options.default(
+  def cmd_default_logs_options()
+    @options.default(
       follow: false,
       retry: false,
       pretty: true,
@@ -167,33 +168,33 @@ class LogsCmd
     )
   end
 
-  def cmd_get_sol!(options)
-    if options.type == :application
+  def cmd_get_sol!()
+    if @options.type == :application
       MrMurano::Application.new
-    elsif options.type == :product
+    elsif @options.type == :product
       MrMurano::Product.new
     else
-      MrMurano::Verbose.error "Unknown --type specified: #{options.type}"
+      MrMurano::Verbose.error "Unknown --type specified: #{@options.type}"
       exit 1
     end
   end
 
-  def logs_display(sol, options)
-    if !options.follow
-      logs_once(sol, options)
+  def logs_display(sol)
+    if !@options.follow
+      logs_once(sol)
     else
-      logs_follow(sol, options)
+      logs_follow(sol)
     end
   end
 
-  def logs_once(sol, options)
+  def logs_once(sol)
     ret = sol.get('/logs')
     if ret.is_a?(Hash) && ret.key?(:items)
       ret[:items].reverse.each do |line|
-        if options.raw
+        if @options.raw
           puts line
         else
-          puts MrMurano::Pretties.MakePrettyLogsV1(line, options)
+          puts MrMurano::Pretties.MakePrettyLogsV1(line)
         end
       end
     else
@@ -204,15 +205,15 @@ class LogsCmd
 
   # LATER/2017-12-14 (landonb): Show logs from all associated solutions.
   #   We'll have to wire all the WebSockets from within the EM.run block.
-  def logs_follow(sol, options)
-    formatter = get_formatter(options)
+  def logs_follow(sol)
+    formatter = get_formatter()
     keep_running = true
     while keep_running
-      keep_running = options.retry
+      keep_running = @options.retry
       logs = MrMurano::Logs::Follow.new
       logs.run_event_loop(sol) do |line|
         log_entry = parse_logs_line(line)
-        formatter.call(log_entry, options) unless log_entry.nil?
+        formatter.call(log_entry) unless log_entry.nil?
       end
     end
   end
@@ -225,20 +226,20 @@ class LogsCmd
     nil
   end
 
-  def get_formatter(options)
-    if options.raw
+  def get_formatter()
+    if @options.raw
       method(:print_raw)
     else
       method(:print_pretty)
     end
   end
 
-  def print_raw(line, _options={})
+  def print_raw(line)
     puts line
   end
 
-  def print_pretty(line, options={})
-    puts MrMurano::Pretties.MakePrettyLogsV2(line, options)
+  def print_pretty(line)
+    puts MrMurano::Pretties.MakePrettyLogsV2(line)
   rescue StandardError => err
     MrMurano::Verbose.error "Failed to parse log: #{err} / #{line}"
     raise
