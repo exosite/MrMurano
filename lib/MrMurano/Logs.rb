@@ -14,6 +14,10 @@ require 'MrMurano/verbosing'
 module MrMurano
   module Logs
     class Follow
+      def initialize(query)
+        @query = query
+      end
+
       def run_event_loop(sol, &block)
         # block_given?
         @message_handler = block
@@ -33,10 +37,12 @@ module MrMurano
           protocol + ':/', $cfg['net.host'], 'api:1', 'log', sol.api_id, 'logs',
         ].join('/')
         uri += %(?token=#{sol.token})
-        uri += %(&query={})
-        uri += %(&projection={})
-        # FIXME: (landonb): Would we want to add limit=?
-        #uri += %(&limit=20)
+        uri += %(&query=#{@query})
+        # MAYBE: (landonb): Add projection options? (Use for tracking exclusion.)
+        #   uri += %(&projection={})
+        # MAYBE: (landonb): Add limit option? This is number
+        #  of old log events to fetch first before streaming.
+        #   uri += %(&limit=20)
         uri
       end
 
