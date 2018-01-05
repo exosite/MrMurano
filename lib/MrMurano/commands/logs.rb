@@ -18,15 +18,15 @@ require 'MrMurano/Solution'
 class LogsCmd
   include MrMurano::Verbose
 
-  LogEmitterTypes = %i[
+  LOG_EMITTER_TYPES = %i[
     script
     call
     event
     config
     service
-  ]
+  ].freeze
 
-  LogSeverities = %i[
+  LOG_SEVERITIES = %i[
     emergency
     alert
     critical
@@ -35,7 +35,7 @@ class LogsCmd
     notice
     informational
     debug
-  ]
+  ].freeze
 
   # (lb): Ideally, we'd use +/- and not +/:, but rb-commander (or is it
   # OptionParser?) double-parses things that look like switches. E.g.,
@@ -45,8 +45,8 @@ class LogsCmd
   # (Note also we cannot use '!' instead of '-', because Bash.)
   # Another option would be to use the "no-" option, e.g., "--[no-]types",
   # but then what do you do with the sindle character '-T' option?
-  ExcludeIndicator = ':'
-  IncludeIndicator = '+'
+  EXCLUDE_INDICATOR = ':'
+  INCLUDE_INDICATOR = '+'
 
   def initialize
     @filter_severity = []
@@ -206,7 +206,7 @@ class LogsCmd
       %(
         Only show log entries of this severity.
         May be specified by name, value, or range, e.g., WARN, 3, 1-4.
-          #{LogSeverities.map.with_index { |s, i| "#{s}(#{i})" }.join(' ')}
+          #{LOG_SEVERITIES.map.with_index { |s, i| "#{s}(#{i})" }.join(' ')}
       ).strip
     ) do |value|
       @filter_severity.push value
@@ -217,14 +217,14 @@ class LogsCmd
     emitter_type_help = %(
       Filter log entries by type (emitter system) of message.
       EMITTERS is 1 or more comma-separated types:
-        #{LogEmitterTypes.map(&:to_s)}
-      Use a "#{IncludeIndicator}" or "#{ExcludeIndicator}" prefix to include or exclude types, respectively.
+        #{LOG_EMITTER_TYPES.map(&:to_s)}
+      Use a "#{INCLUDE_INDICATOR}" or "#{EXCLUDE_INDICATOR}" prefix to include or exclude types, respectively.
     ).strip
     cmd.option('-T EMITTERS', '--types EMITTERS', Array, emitter_type_help) do |values|
       # This seems a little roundabout, but rb-commander only keeps last value.
       @filter_types.push values
       values.map do |val|
-        val.sub(/^[#{IncludeIndicator}#{ExcludeIndicator}]/, '')
+        val.sub(/^[#{INCLUDE_INDICATOR}#{EXCLUDE_INDICATOR}]/, '')
       end
     end
   end
@@ -287,7 +287,7 @@ class LogsCmd
 
   def cmd_get_sol!
     if @options.type == :application
-     MrMurano::Application.new
+      MrMurano::Application.new
     elsif @options.type == :product
       MrMurano::Product.new
     else
@@ -314,7 +314,7 @@ class LogsCmd
     indices = []
     filter_severity.each do |sev|
       index = sev if sev =~ /^[0-9]$/
-      index = LogSeverities.find_index { |s| s.to_s =~ /^#{sev.downcase}/ } unless index
+      index = LOG_SEVERITIES.find_index { |s| s.to_s =~ /^#{sev.downcase}/ } unless index
       if index
         indices.push index.to_i
       else
@@ -339,9 +339,9 @@ class LogsCmd
 
   def assemble_query_types_array(query_parts)
     assemble_in_or_nin_query(query_parts, 'type', @filter_types.flatten) do |type|
-      index = LogEmitterTypes.find_index { |s| s.to_s =~ /^#{type.downcase}/ }
+      index = LOG_EMITTER_TYPES.find_index { |s| s.to_s =~ /^#{type.downcase}/ }
       if index
-        LogEmitterTypes[index].to_s
+        LOG_EMITTER_TYPES[index].to_s
       else
         warning "Invalid emitter type: #{type}"
         exit 1
@@ -400,25 +400,25 @@ class LogsCmd
   end
 
   def term_indicates_exclude?(term)
-    if term.start_with? ExcludeIndicator
+    if term.start_with? EXCLUDE_INDICATOR
       true
     else
       false
     end
   end
 
-  def process_query_term(term, resolved_terms, exclude, field, terms, &block)
+  def process_query_term(term, resolved_terms, exclude, field, terms)
     verify_term_plus_minux_prefix!(term, exclude, field, terms)
-    term = term.sub(/^[#{IncludeIndicator}#{ExcludeIndicator}]/, '')
+    term = term.sub(/^[#{INCLUDE_INDICATOR}#{EXCLUDE_INDICATOR}]/, '')
     term = yield term if block_given?
     resolved_terms.push term
   end
 
   def verify_term_plus_minux_prefix!(term, exclude, field, terms)
-    return unless term =~ /^[#{IncludeIndicator}#{ExcludeIndicator}]/
+    return unless term =~ /^[#{INCLUDE_INDICATOR}#{EXCLUDE_INDICATOR}]/
     return unless (
-      (!exclude && term.start_with?(ExcludeIndicator)) ||
-      (exclude && term.start_with?(IncludeIndicator))
+      (!exclude && term.start_with?(EXCLUDE_INDICATOR)) ||
+      (exclude && term.start_with?(INCLUDE_INDICATOR))
     )
     warning(
       %(You cannot mix + and ! for "#{field}": #{terms.join(',')})
@@ -468,7 +468,7 @@ class LogsCmd
   # LATER/2017-12-14 (landonb): Show logs from all associated solutions.
   #   We'll have to wire all the WebSockets from within the EM.run block.
   def logs_follow(sol)
-    formatter = get_formatter
+    formatter = fetch_formatter
     keep_running = true
     while keep_running
       keep_running = @options.retry
@@ -492,7 +492,7 @@ class LogsCmd
     nil
   end
 
-  def get_formatter
+  def fetch_formatter
     if @options.raw
       method(:print_raw)
     else
@@ -505,9 +505,7 @@ class LogsCmd
   end
 
   def print_pretty(line)
-    if @log_format_is_v2.nil?
-      determine_format(line)
-    end
+    determine_format(line) if @log_format_is_v2.nil?
     if @log_format_is_v2
       puts MrMurano::Pretties.MakePrettyLogsV2(line, @options)
     else
@@ -532,9 +530,7 @@ end
 
 def wire_cmd_logs
   logs_cmd = LogsCmd.new
-  command(:logs) { |cmd|
-    logs_cmd.command_logs(cmd)
-  }
+  command(:logs) { |cmd| logs_cmd.command_logs(cmd) }
   alias_command 'logs application', 'logs', '--type', 'application'
   alias_command 'logs product', 'logs', '--type', 'product'
   alias_command 'application logs', 'logs', '--type', 'application'
