@@ -202,63 +202,17 @@ module MrMurano
     # @param local [Pathname] Full path of where to download to
     # @param item [Item] The item to download
     def update_mtime(local, item)
-      # FIXME/MUR-XXXX: Ideally, server should use a hash we can compare.
-      #   For now, we use the sometimes set :updated_at value.
-      # FIXME/EXPLAIN/2017-06-23: Why is :updated_at sometimes not set?
-      #   (See more comments, below.)
       return unless item[:updated_at]
-
       mod_time = item[:updated_at]
       mod_time = Time.parse(mod_time) unless mod_time.is_a?(Time)
       begin
         FileUtils.touch([local.to_path], mtime: mod_time)
       rescue Errno::EACCES => err
-        # This happens on Windows...
-        require 'rbconfig'
-        # Check the platform, e.g., "linux-gnu", or other.
-        #is_windows = (
-        #  RbConfig::CONFIG['host_os'] =~ /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-        #)
+        # (lb): This is okay on Windows. (We really need a better solution.)
         unless OS.windows?
           msg = 'Unexpected: touch failed on non-Windows machine'
           warn "#{msg} / host_os: #{RbConfig::CONFIG['host_os']} / err: #{err}"
         end
-
-        # 2017-07-13: Nor does ctime work.
-        #   Errno::EACCES:
-        #   Permission denied @ utime_failed -
-        #     C:/Users/ADMINI~1/AppData/Local/Temp/2/one.lua_remote_20170714-1856-by2nzk.lua
-        #File.utime(mod_time, mod_time, local.to_path)
-
-        # 2017-07-14: So this probably fails, too...
-        #FileUtils.touch [local.to_path,], :ctime => mod_time
-
-        # MAYBE/2017-07-14: How to make diff work on Windows?
-        #   Would need to store timestamp in metafile?
-
-        # FIXME/EXPLAIN/2017-06-23: Why is :updated_at sometimes not set?
-        #     And why have I only triggered this from ./spec/cmd_syncdown_spec.rb ?
-        #       (Probably because nothing else makes routes or files?)
-        #     Here are the items in question:
-        #
-        # Happens to each of the MrMurano::Webservice::Endpoint::RouteItem's:
-        #
-        # <MrMurano::Webservice::Endpoint::RouteItem:0x007fe719cb6300
-        #   @id="QeRq21Cfij",
-        #   @method="delete",
-        #   @path="/api/fire/{code}",
-        #   @content_type="application/json",
-        #   @script="--#ENDPOINT delete /api/fire/{code}\nreturn 'ok'\n\n-- vim: set ai sw=2 ts=2 :\n",
-        #   @use_basic_auth=false,
-        #   @synckey="DELETE_/api/fire/{code}">
-        #
-        # Happens to each of the MrMurano::Webservice::File::FileItem's:
-        #
-        # <MrMurano::Webservice::File::FileItem:0x007fe71a44a8f0
-        #   @path="/",
-        #   @mime_type="text/html",
-        #   @checksum="da39a3ee5e6b4b0d3255bfef95601890afd80709",
-        #   @synckey="/">
       end
     end
 
