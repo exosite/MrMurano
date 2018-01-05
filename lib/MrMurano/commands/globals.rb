@@ -92,3 +92,4 @@ global_option('--sid VALUE', %(Override application or product ID)) do |value|
   $cfg['application.id'] = value
   $cfg['product.id'] = value
 end
+
