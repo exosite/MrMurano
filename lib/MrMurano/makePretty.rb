@@ -181,6 +181,9 @@ module MrMurano
     end
 
     def self.log_pretty_header_add_a_service_event(line, out, raw, _options)
+      pad = '    '
+      out += pad
+      raw += pad
       svc_evt = []
       svc_evt += [line[:service]] unless line[:service].to_s.empty?
       svc_evt += [line[:event]] unless line[:event].to_s.empty?
