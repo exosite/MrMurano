@@ -120,7 +120,7 @@ module MrMurano
     end
 
     def new_meta
-      tname = $cfg['location.base'].basename.to_s.gsub(/[^A-Za-z0-9]/, '')
+      tname = Pathname.new($cfg['location.base']).basename.to_s.gsub(/[^A-Za-z0-9]/, '')
       PrjMeta.new(
         tname,
         "One line summary of #{tname}",
