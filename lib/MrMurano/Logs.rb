@@ -34,7 +34,7 @@ module MrMurano
         # FIXME/2017-12-12 (landonb): Which endpoint do we want?
         #   /events, or /all, or /logs??
         uri = [
-          protocol + ':/', $cfg['net.host'], 'api:1', 'log', sol.api_id, 'logs',
+          protocol + ':/', $cfg['net.host'], 'api:1', 'solution', sol.api_id, 'logs',
         ].join('/')
         uri += %(?token=#{sol.token})
         uri += %(&query=#{@query})
