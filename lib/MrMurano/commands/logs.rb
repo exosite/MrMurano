@@ -18,11 +18,49 @@ require 'MrMurano/Solution'
 class LogsCmd
   include MrMurano::Verbose
 
+  LogEmitterTypes = %i[
+    script
+    call
+    event
+    config
+    service
+  ]
+
+  LogSeverities = %i[
+    emergency
+    alert
+    critical
+    error
+    warning
+    notice
+    informational
+    debug
+  ]
+
+  # (lb): Ideally, we'd use +/- and not +/:, but rb-commander (or is it
+  # OptionParser?) double-parses things that look like switches. E.g.,
+  # `murano logs --types -call` would set options.types to ["-call"]
+  # but would also set options.config to "all". Just one more reason
+  # I do not think rb-commander should call itself a "complete solution".
+  # (Note also we cannot use '!' instead of '-', because Bash.)
+  # Another option would be to use the "no-" option, e.g., "--[no-]types",
+  # but then what do you do with the sindle character '-T' option?
+  ExcludeIndicator = ':'
+  IncludeIndicator = '+'
+
+  def initialize
+    @filter_severity = []
+    @filter_types = []
+    @filter_events = []
+    @filter_endpoints = []
+  end
+
   def command_logs(cmd)
     cmd_add_logs_meta(cmd)
     # Add global solution flag: --type [application|product].
     cmd_add_solntype_pickers(cmd, exclude_all: true)
     cmd_add_logs_options(cmd)
+    cmd_add_filter_options(cmd)
     cmd.action do |args, options|
       @options = options
       cmd.verify_arg_count!(args)
@@ -139,43 +177,262 @@ class LogsCmd
     ).strip, 'murano logs --follow -V -l 1-2,WARN,7'
   end
 
-  def cmd_add_logs_options(c)
-    c.option '-f', '--follow', %(Follow logs from server)
-    c.option '-r', '--retry', %(Always retry the connection)
-    c.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
-    c.option '--[no-]pretty', %(Reformat JSON blobs in logs.)
-    c.option '--raw', %(Don't do any formating of the log data)
-    c.option '--tracking', %(Include start of the Murano Tracking ID)
-    c.option '--tracking-full', %(Include the full Murano Tracking ID)
-    c.option '--http', %(Use HTTP connection [deprecated; will be removed])
+  def cmd_add_logs_options(cmd)
+    cmd.option '-f', '--follow', %(Follow logs from server)
+    cmd.option '-r', '--retry', %(Always retry the connection)
+    cmd.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
+    cmd.option '--[no-]pretty', %(Reformat JSON blobs in logs)
+    cmd.option '--raw', %(Do not format the log data)
   end
 
-  def logs_action()
-    cmd_default_logs_options()
-    cmd_defaults_solntype_pickers(:application)
-    sol = cmd_get_sol!()
+  def cmd_add_filter_options(cmd)
+    # Common log fields.
+    cmd_add_filter_option_severity(cmd)
+    cmd_add_filter_option_type(cmd)
+    cmd_add_filter_option_message(cmd)
+    cmd_add_filter_option_service(cmd)
+    cmd_add_filter_option_event(cmd)
+    # Skipping: timestamp filter
+    # Skipping: tracking_id filter
+    # Type-specific fields in data.
+    cmd_add_filter_option_endpoint(cmd)
+    # Skipping: module filter
+    # Skipping: elapsed time filter (i.e., could do { elapsed: { $gt: 10 } })
+  end
+
+  def cmd_add_filter_option_severity(cmd)
+    cmd.option(
+      '-l', '--severity [NAME|LEVEL|RANGE[,NAME|LEVEL|RANGE...]]', Array,
+      %(
+        Only show log entries of this severity.
+        May be specified by name, value, or range, e.g., WARN, 3, 1-4.
+          #{LogSeverities.map.with_index { |s, i| "#{s}(#{i})" }.join(' ')}
+      ).strip
+    ) do |value|
+      @filter_severity.push value
+    end
+  end
+
+  def cmd_add_filter_option_type(cmd)
+    emitter_type_help = %(
+      Filter log entries by type (emitter system) of message.
+      EMITTERS is 1 or more comma-separated types:
+        #{LogEmitterTypes.map(&:to_s)}
+      Use a "#{IncludeIndicator}" or "#{ExcludeIndicator}" prefix to include or exclude types, respectively.
+    ).strip
+    cmd.option('-T EMITTERS', '--types EMITTERS', Array, emitter_type_help) do |values|
+      # This seems a little roundabout, but rb-commander only keeps last value.
+      @filter_types.push values
+      values.map do |val|
+        val.sub(/^[#{IncludeIndicator}#{ExcludeIndicator}]/, '')
+      end
+    end
+  end
+
+  def cmd_add_filter_option_message(cmd)
+    cmd.option '-m', '--message GLOB', %(
+      Filter log entries by the message contents
+    ).strip
+  end
+
+  def cmd_add_filter_option_service(cmd)
+    cmd.option '-s', '--service GLOB', %(
+      Filter log entries by the originating service
+    ).strip
+  end
+
+  def cmd_add_filter_option_event(cmd)
+    cmd.option(
+      '-E', '--event GLOB', Array,
+      %(Filter log entries by the event)
+    ) do |value|
+      @filter_events.push value
+    end
+  end
+
+  def cmd_add_filter_option_endpoint(cmd)
+    cmd.option(
+      '-e', '--endpoint ENDPOINT',
+      %(Filter log entries by the endpoint (ENDPOINT is VERB:PATH or GLOB))
+    ) do |value|
+      @filter_endpoints.push value
+    end
+  end
+
+  def logs_action
+    cmd_default_logs_options
+    cmd_defaults_solntype_pickers(@options, :application)
+    @query = assemble_query
+    verbose %(query: #{@query})
+    sol = cmd_get_sol!
     logs_display(sol)
   end
 
-  def cmd_default_logs_options()
+  def cmd_default_logs_options
     @options.default(
+      type: :application,
       follow: false,
       retry: false,
-      pretty: true,
       localtime: true,
+      pretty: true,
       raw: false,
-      type: :application,
+      severity: nil,
+      types: [],
+      message: nil,
+      service: nil,
+      event: nil,
+      endpoint: nil,
     )
   end
 
-  def cmd_get_sol!()
+  def cmd_get_sol!
     if @options.type == :application
-      MrMurano::Application.new
+     MrMurano::Application.new
     elsif @options.type == :product
       MrMurano::Product.new
     else
-      MrMurano::Verbose.error "Unknown --type specified: #{@options.type}"
+      error "Unknown --type specified: #{@options.type}"
       exit 1
+    end
+  end
+
+  def assemble_query
+    query_parts = {}
+    assemble_query_severity(query_parts)
+    assemble_query_types_array(query_parts)
+    assemble_query_message(query_parts)
+    assemble_query_service(query_parts)
+    assemble_query_event(query_parts)
+    assemble_query_endpoint(query_parts)
+    # Assemble and return actual query string.
+    assemble_query_string(query_parts)
+  end
+
+  def assemble_query_severity(query_parts)
+    filter_severity = @filter_severity.flatten
+    return if filter_severity.empty?
+    indices = []
+    filter_severity.each do |sev|
+      index = sev if sev =~ /^[0-9]$/
+      index = LogSeverities.find_index { |s| s.to_s =~ /^#{sev.downcase}/ } unless index
+      if index
+        indices.push index.to_i
+      else
+        parts = /^([0-9])-([0-9])$/.match(sev)
+        if !parts.nil?
+          start = parts[1].to_i
+          finis = parts[2].to_i
+          if start < finis
+            more_indices = (start..finis).to_a
+          else
+            more_indices = (finis..start).to_a
+          end
+          indices += more_indices
+        else
+          warning "Invalid severity: #{sev}"
+          exit 1
+        end
+      end
+    end
+    query_parts['severity'] = { '$in': indices }
+  end
+
+  def assemble_query_types_array(query_parts)
+    assemble_in_or_nin_query(query_parts, 'type', @filter_types.flatten) do |type|
+      index = LogEmitterTypes.find_index { |s| s.to_s =~ /^#{type.downcase}/ }
+      if index
+        LogEmitterTypes[index].to_s
+      else
+        warning "Invalid emitter type: #{type}"
+        exit 1
+      end
+    end
+  end
+
+  def assemble_query_message(query_parts)
+    assemble_string_search_one(query_parts, 'message', @options.message)
+  end
+
+  def assemble_query_service(query_parts)
+    assemble_string_search_one(query_parts, 'service', @options.service)
+  end
+
+  def assemble_query_event(query_parts)
+    assemble_string_search_many(query_parts, 'event', @filter_events)
+  end
+
+  def assemble_query_endpoint(query_parts)
+    assemble_string_search_many(query_parts, 'endpoint', @filter_endpoints)
+  end
+
+  def assemble_string_search_one(query_parts, field, value)
+    return if value.to_s.empty?
+    # FIXME/MUR-XXX: Once Pegasus is fixed, this:
+    #   query_parts[field] = { '$regex': "/#{value}/i" }
+    # For now, do strict equality:
+    query_parts[field] = { '$eq': value }
+  end
+
+  def assemble_string_search_many(query_parts, field, arr_of_arrs)
+    terms = arr_of_arrs.flatten
+    return if terms.empty?
+    if terms.length == 1
+      assemble_string_search_one(query_parts, field, terms[0])
+    else
+      assemble_in_or_nin_query(query_parts, field, terms)
+    end
+  end
+
+  def assemble_in_or_nin_query(query_parts, field, terms, &block)
+    return if terms.empty?
+    exclude = term_indicates_exclude?(terms[0])
+    resolved_terms = []
+    terms.each do |term|
+      process_query_term(term, resolved_terms, exclude, field, terms, &block)
+    end
+    return if resolved_terms.empty?
+    if !exclude
+      operator = '$in'
+    else
+      operator = '$nin'
+    end
+    query_parts[field] = { "#{operator}": resolved_terms }
+  end
+
+  def term_indicates_exclude?(term)
+    if term.start_with? ExcludeIndicator
+      true
+    else
+      false
+    end
+  end
+
+  def process_query_term(term, resolved_terms, exclude, field, terms, &block)
+    verify_term_plus_minux_prefix!(term, exclude, field, terms)
+    term = term.sub(/^[#{IncludeIndicator}#{ExcludeIndicator}]/, '')
+    term = yield term if block_given?
+    resolved_terms.push term
+  end
+
+  def verify_term_plus_minux_prefix!(term, exclude, field, terms)
+    return unless term =~ /^[#{IncludeIndicator}#{ExcludeIndicator}]/
+    return unless (
+      (!exclude && term.start_with?(ExcludeIndicator)) ||
+      (exclude && term.start_with?(IncludeIndicator))
+    )
+    warning(
+      %(You cannot mix + and ! for "#{field}": #{terms.join(',')})
+    )
+    exit 1
+  end
+
+  def assemble_query_string(query_parts)
+    if query_parts.empty?
+      ''
+    else
+      # (lb): I tried escaping parts of the query but it broke things.
+      # So I'm assuming we don't need CGI.escape or URI.encode_www_form.
+      query_parts.to_json
     end
   end
 
@@ -188,13 +445,18 @@ class LogsCmd
   end
 
   def logs_once(sol)
-    ret = sol.get('/logs')
+    # NOTE (lb): Unsure whether we need to encode parts of the query,
+    # possibly with CGI.escape. Note that http.get calls
+    # URI.encode_www_form(query), which the server will accept,
+    # but it will not produce any results.
+    query = @query.empty? && '' || "?query=#{@query}"
+    ret = sol.get("/logs#{query}")
     if ret.is_a?(Hash) && ret.key?(:items)
       ret[:items].reverse.each do |line|
         if @options.raw
           puts line
         else
-          puts MrMurano::Pretties.MakePrettyLogsV1(line)
+          print_pretty(line)
         end
       end
     else
@@ -206,14 +468,18 @@ class LogsCmd
   # LATER/2017-12-14 (landonb): Show logs from all associated solutions.
   #   We'll have to wire all the WebSockets from within the EM.run block.
   def logs_follow(sol)
-    formatter = get_formatter()
+    formatter = get_formatter
     keep_running = true
     while keep_running
       keep_running = @options.retry
-      logs = MrMurano::Logs::Follow.new
+      logs = MrMurano::Logs::Follow.new(@query)
       logs.run_event_loop(sol) do |line|
         log_entry = parse_logs_line(line)
-        formatter.call(log_entry) unless log_entry.nil?
+        if log_entry[:statusCode] == 400
+          warning "Query error: #{log_entry}"
+        else
+          formatter.call(log_entry) unless log_entry.nil?
+        end
       end
     end
   end
@@ -222,11 +488,11 @@ class LogsCmd
     log_entry = JSON.parse(line)
     elevate_hash(log_entry)
   rescue StandardError => err
-    MrMurano::Verbose.warning "Not JSON: #{err} / #{line}"
+    warning "Not JSON: #{err} / #{line}"
     nil
   end
 
-  def get_formatter()
+  def get_formatter
     if @options.raw
       method(:print_raw)
     else
@@ -239,10 +505,28 @@ class LogsCmd
   end
 
   def print_pretty(line)
-    puts MrMurano::Pretties.MakePrettyLogsV2(line)
+    if @log_format_is_v2.nil?
+      determine_format(line)
+    end
+    if @log_format_is_v2
+      puts MrMurano::Pretties.MakePrettyLogsV2(line, @options)
+    else
+      puts MrMurano::Pretties.MakePrettyLogsV1(line, @options)
+    end
   rescue StandardError => err
-    MrMurano::Verbose.error "Failed to parse log: #{err} / #{line}"
+    error "Failed to parse log: #{err} / #{line}"
     raise
+  end
+
+  def determine_format(line)
+    # FIXME/2018-01-05 (landonb): On bizapi-dev, I see new-format logs,
+    # but on bizapi-staging, I see old school format. So deal with it.
+    # Logs V1 have 4 entries: type, timestamp, subject, data
+    # Logs V2 have lots more entries, including type, timestamp and data.
+    # We could use presence of subject to distinguish; or we could check
+    # timestamp, which is seconds in V1 but msecs in V2; or we could check
+    # data, which is string in V1, and Hash in V2.
+    @log_format_is_v2 = !(line[:data].is_a? String)
   end
 end
 
