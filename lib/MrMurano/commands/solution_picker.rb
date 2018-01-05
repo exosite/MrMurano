@@ -15,8 +15,8 @@ MSG_SOLUTIONS_NONE_FOUND = 'No solutions found' unless defined? MSG_SOLUTIONS_NO
 # *** For some commands: let user restrict to specific solution --type.
 # ---------------------------------------------------------------------
 
-def cmd_add_solntype_pickers(c, exclude_all: false)
-  # 2017-07-26: HA! The --type option can get masked by aliases.
+def cmd_add_solntype_pickers(cmd, exclude_all: false)
+  # 2017-07-26 (landonb): HA! The --type option can get masked by aliases.
   # For instance, if the option is required ("--type TYPE"), then
   #   murano domain --type product
   # fails, because the "domain product" alias steals the --type argument,
@@ -31,7 +31,7 @@ def cmd_add_solntype_pickers(c, exclude_all: false)
   allowed_types += [:all] unless exclude_all
   allowed_types.map!(&:to_s).sort!
   default = exclude_all && 'application' || 'all'
-  c.option(
+  cmd.option(
     '--type [TYPE]',
     allowed_types,
     %(Apply to solution(s) of type [#{allowed_types.join('|')}] (default: #{default}))
@@ -194,16 +194,16 @@ end
 # *** For murano init: specify --business, --application, and/or --product.
 # -------------------------------------------------------------------------
 
-def cmd_option_application_pickers(c)
-  c.option('--application-id ID', String, %(ID of Application to use))
-  c.option('--application-name NAME', String, %(Name of Application to use))
-  c.option('--application APPLICATION', String, %(Name or ID of Application to use))
+def cmd_option_application_pickers(cmd)
+  cmd.option('--application-id ID', String, %(ID of Application to use))
+  cmd.option('--application-name NAME', String, %(Name of Application to use))
+  cmd.option('--application APPLICATION', String, %(Name or ID of Application to use))
 end
 
-def cmd_option_product_pickers(c)
-  c.option('--product-id ID', String, %(ID of Product to use))
-  c.option('--product-name NAME', String, %(Name of Product to use))
-  c.option('--product PRODUCT', String, %(Name or ID of Product to use))
+def cmd_option_product_pickers(cmd)
+  cmd.option('--product-id ID', String, %(ID of Product to use))
+  cmd.option('--product-name NAME', String, %(Name of Product to use))
+  cmd.option('--product PRODUCT', String, %(Name or ID of Product to use))
 end
 
 def any_solution_pickers!(options)
