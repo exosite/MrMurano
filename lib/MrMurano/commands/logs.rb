@@ -18,9 +18,6 @@ require 'MrMurano/Solution'
 class LogsCmd
   include MrMurano::Verbose
 
-  # FIXME: (landonb): MUR-3081: Remove old http code for v3.1.0. Search: LOGS_USE_HTTP.
-  LOGS_USE_HTTP = true
-
   def command_logs(cmd)
     cmd_add_logs_meta(cmd)
     # Add global solution flag: --type [application|product].
@@ -32,14 +29,10 @@ class LogsCmd
     end
   end
 
-  def cmd_add_logs_meta(c)
-    c.syntax = %(murano logs [--options])
-    c.summary = %(Get the logs for a solution)
-    if LOGS_USE_HTTP
-      c.description = %(Get the logs for a solution.)
-    else
-      cmd_add_logs_help(c)
-    end
+  def cmd_add_logs_meta(cmd)
+    cmd.syntax = %(murano logs [--options])
+    cmd.summary = %(Get the logs for a solution)
+    cmd_add_help(cmd)
     cmd_add_examples(cmd)
   end
 
@@ -147,11 +140,10 @@ class LogsCmd
 
   def cmd_add_logs_options(c)
     c.option '-f', '--follow', %(Follow logs from server)
-    c.option '-r', '--retry', %(Always retry the connection) unless LOGS_USE_HTTP
+    c.option '-r', '--retry', %(Always retry the connection)
     c.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
     c.option '--[no-]pretty', %(Reformat JSON blobs in logs.)
     c.option '--raw', %(Don't do any formating of the log data)
-    return if LOGS_USE_HTTP
     c.option '--tracking', %(Include start of the Murano Tracking ID)
     c.option '--tracking-full', %(Include the full Murano Tracking ID)
     c.option '--http', %(Use HTTP connection [deprecated; will be removed])
@@ -210,59 +202,9 @@ class LogsCmd
     end
   end
 
-  def logs_follow(sol, options)
-    if !LOGS_USE_HTTP && !options.http
-      logs_follow_wss(sol, options)
-    else
-      logs_follow_http(sol, options)
-    end
-  end
-
-  # FIXME: (landonb): MUR-3081: Remove old http code for v3.1.0. Search: LOGS_USE_HTTP.
-  def logs_follow_http(sol, options)
-    # Open a lasting connection and continually feed MakePrettyLogsV1().
-    sol.get('/logs?polling=true') do |request, http|
-      request['Accept-Encoding'] = 'None'
-      http.request(request) do |response|
-        remainder = ''
-        response.read_body do |chunk|
-          chunk = remainder + chunk unless remainder.empty?
-
-          # For all complete JSON blobs, make them pretty.
-          chunk.gsub!(/\{(?>[^}{]+|\g<0>)*\}/m) do |m|
-            if options.raw
-              puts m
-            else
-              begin
-                js = JSON.parse(
-                  m,
-                  allow_nan: true,
-                  symbolize_names: true,
-                  create_additions: false,
-                )
-                puts MrMurano::Pretties.MakePrettyLogsV1(js, options)
-              rescue StandardError
-                sol.error '=== JSON parse error, showing raw instead ==='
-                puts m
-              end
-            end
-            '' #remove (we're kinda abusing gsub here.)
-          end
-
-          # Is there an incomplete one?
-          chunk.match(/(\{.*$)/m) do |mat|
-            remainder = mat[1]
-          end
-        end
-      end
-    end
-  # rubocop:disable Lint/HandleExceptions: Do not suppress exceptions.
-  rescue Interrupt => _
-  end
-
   # LATER/2017-12-14 (landonb): Show logs from all associated solutions.
   #   We'll have to wire all the WebSockets from within the EM.run block.
-  def logs_follow_wss(sol, options)
+  def logs_follow(sol, options)
     formatter = get_formatter(options)
     keep_running = true
     while keep_running
