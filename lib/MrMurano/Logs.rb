@@ -37,7 +37,7 @@ module MrMurano
           protocol + ':/', $cfg['net.host'], 'api:1', 'solution', sol.api_id, 'logs',
         ].join('/')
         uri += %(?token=#{sol.token})
-        uri += %(&query=#{@query})
+        uri += %(&query=#{@query}) unless @query.to_s.empty?
         # MAYBE: (landonb): Add projection options? (Use for tracking exclusion.)
         #   uri += %(&projection={})
         # MAYBE: (landonb): Add limit option? This is number
