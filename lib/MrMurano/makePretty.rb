@@ -20,6 +20,8 @@ module MrMurano
     end
     HighLine.color_scheme = PRETTIES_COLORSCHEME
 
+    TERM_WIDTH, _rows = HighLine::SystemExtensions.terminal_size
+
     # rubocop:disable Style/MethodName: "Use snake_case for method names."
     def self.makeJsonPretty(data, options, indent: nil, object_nl: nil)
       if options.pretty
@@ -88,8 +90,12 @@ module MrMurano
 
     def self.fmt_text_padded(text, style, out, raw, options, min_width: 0)
       min_width = text.length + 3 unless options.align
-      padding = min_width - text.length
+      if options.align && min_width == 0
+        prefix = TERM_WIDTH - raw.length - text.length
+        out += ' ' * prefix
+        raw += ' ' * prefix
       end
+      padding = min_width - text.length
       padding = ' ' * (padding > 0 && padding || 0)
       out += HighLine.color(text, style) + padding
       raw += text + padding
