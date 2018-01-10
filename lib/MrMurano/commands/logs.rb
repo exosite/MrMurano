@@ -553,10 +553,10 @@ class LogsCmd
     ret = sol.get("/logs#{query_string}")
     if ret.is_a?(Hash) && ret.key?(:items)
       ret[:items].reverse.each do |line|
-        if @options.raw
-          puts line
-        else
+        if pretty_printing
           print_pretty(line)
+        else
+          print_raw(line)
         end
       end
     else
@@ -606,15 +606,19 @@ class LogsCmd
   end
 
   def fetch_formatter
-    if @options.raw
-      method(:print_raw)
-    else
+    if pretty_printing
       method(:print_pretty)
+    else
+      method(:print_raw)
     end
   end
 
+  def pretty_printing
+    !@options.raw && ($cfg['tool.outformat'] == 'best')
+  end
+
   def print_raw(line)
-    puts line
+    outf line
   end
 
   def print_pretty(line)
