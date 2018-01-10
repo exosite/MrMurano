@@ -15,6 +15,9 @@ require 'MrMurano/Logs'
 require 'MrMurano/ReCommander'
 require 'MrMurano/Solution'
 
+# Because Ruby 2.0 does not support quoted keys, e.g., { '$eq': 'value' }.
+# rubocop:disable Style/HashSyntax
+
 class LogsCmd
   include MrMurano::Verbose
 
