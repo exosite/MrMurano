@@ -358,7 +358,7 @@ class LogsCmd
   end
 
   def assemble_query_message(query_parts)
-    assemble_string_search_one(query_parts, 'message', @options.message)
+    assemble_string_search_one(query_parts, 'message', @options.message, regex: true)
   end
 
   def assemble_query_service(query_parts)
@@ -386,11 +386,19 @@ class LogsCmd
     parts.join('_').downcase
   end
 
+  def assemble_string_search_one(query_parts, field, value, regex: false)
     return if value.to_s.empty?
-    # FIXME/MUR-XXX: Once Pegasus is fixed, this:
-    #   query_parts[field] = { '$regex': "/#{value}/i" }
-    # For now, do strict equality:
-    query_parts[field] = { '$eq': value }
+    if !regex
+      # Note that some options support strict equality, e.g.,
+      #   { 'key': { '$eq': 'value' } }
+      # but post-processed keys like 'data.section' do not.
+      # So we just do normal equality, e.g.,
+      #   { 'key': 'value' }
+      query_parts[field] = value
+    else
+      query_parts[field] = { :'$regex' => value }
+      query_parts[field][:'$options'] = 'i' if @options.insensitive
+    end
   end
 
   def assemble_string_search_many(query_parts, field, arr_of_arrs)
