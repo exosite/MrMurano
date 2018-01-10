@@ -227,7 +227,7 @@ module MrMurano
 
     def self.log_pretty_emphasize_entry(entry, hash, options)
       return '' unless hash.key?(entry) && !hash[entry].empty?
-      out = @body_prefix + "---------\n"
+      out = @body_prefix + "---------\n" if options.separators
       out += @body_prefix + "#{entry}: "
       out += log_pretty_json(hash[entry], options)
       out + "\n"
@@ -240,7 +240,7 @@ module MrMurano
       ]
       data = data.reject { |key, _val| known_keys.include?(key) }
       return '' if data.empty?
-      out = @body_prefix + "---------\n"
+      out = options.separators && (@body_prefix + "---------\n") || ''
       out + @body_prefix + 'data: ' + log_pretty_json(data, options) + "\n"
     end
 

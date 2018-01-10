@@ -198,6 +198,7 @@ class LogsCmd
     cmd_add_format_options_one_line(cmd)
     cmd_add_format_options_align_columns(cmd)
     cmd_add_format_options_indent_body(cmd)
+    cmd_add_format_options_separators(cmd)
     cmd_add_format_options_include_tracking(cmd)
     cmd_add_format_options_sprintf(cmd)
   end
@@ -228,6 +229,10 @@ class LogsCmd
 
   def cmd_add_format_options_indent_body(cmd)
     cmd.option '--[no-]indent', %(Indent body content in formatted output)
+  end
+
+  def cmd_add_format_options_separators(cmd)
+    cmd.option '--[no-]separators', %(Indent body content in formatted output)
   end
 
   def cmd_add_format_options_include_tracking(cmd)
@@ -326,17 +331,18 @@ class LogsCmd
       type: :application,
       follow: false,
       retry: false,
+      insensitive: true,
       limit: nil,
       localtime: true,
       pretty: true,
       raw: false,
-      insensitive: true,
       message_only: false,
       one_line: false,
       tracking: false,
       sprintf: '%Y-%m-%d %H:%M:%S',
       align: false,
       indent: false,
+      separators: false,
       severity: nil,
       types: [],
       message: nil,
