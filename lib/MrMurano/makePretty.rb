@@ -11,11 +11,12 @@ require 'highline'
 
 module MrMurano
   module Pretties
-    HighLine::Style.new(name: :on_aliceblue, code: "\e[48;5;231m", rgb: [240, 248, 255])
     PRETTIES_COLORSCHEME = HighLine::ColorScheme.new do |cs|
-      cs[:subject] = %i[red on_aliceblue]
-      cs[:timestamp] = [:blue]
       cs[:json] = [:magenta]
+      cs[:record_type] = [:magenta]
+      cs[:subject] = [:cyan]
+      cs[:timestamp] = [:blue]
+      cs[:tracking] = [:yellow]
     end
     HighLine.color_scheme = PRETTIES_COLORSCHEME
 
@@ -147,7 +148,7 @@ module MrMurano
 
     def self.log_pretty_header_add_log_record_type(line, out, raw, _options)
       log_type = line[:type].to_s.empty? && '--' || line[:type]
-      fmt_text_padded(log_type.upcase, :magenta, out, raw, min_width: 10)
+      fmt_text_padded(log_type.upcase, :record_type, out, raw, min_width: 10)
     end
 
     def self.log_pretty_header_add_event_timestamp(line, out, raw, options)
@@ -177,7 +178,7 @@ module MrMurano
     def self.log_pretty_header_add_murano_tracking(line, out, raw, options)
       return [out, raw] unless options.tracking
       tid = line[:tracking_id].to_s.empty? && '--------' || line[:tracking_id].slice(0, 8)
-      fmt_text_padded(tid, :yellow, out, raw, min_width: 10)
+      fmt_text_padded(tid, :tracking, out, raw, min_width: 11)
     end
 
     def self.log_pretty_header_add_a_service_event(line, out, raw, _options)
