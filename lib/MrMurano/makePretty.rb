@@ -168,7 +168,9 @@ module MrMurano
           else
             curtime = time_secs_epoch.gmtime
           end
-          curtime = curtime.strftime('%Y-%m-%d %H:%M:%S')
+          format = options.sprintf
+          format = '%Y-%m-%d %H:%M:%S' if format.to_s.empty?
+          curtime = curtime.strftime(format)
         else
           curtime = line[:timestamp]
         end

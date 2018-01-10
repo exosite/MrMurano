@@ -196,6 +196,7 @@ class LogsCmd
   def cmd_add_format_options(cmd)
     cmd_add_format_options_align_columns(cmd)
     cmd_add_format_options_indent_body(cmd)
+    cmd_add_format_options_sprintf(cmd)
   end
 
   def cmd_add_format_options_align_columns(cmd)
@@ -205,6 +206,9 @@ class LogsCmd
   def cmd_add_format_options_indent_body(cmd)
     cmd.option '--[no-]indent', %(Indent body content in formatted output)
   end
+
+  def cmd_add_format_options_sprintf(cmd)
+    cmd.option '--sprintf FORMAT', %(Specify timestamp format (default: '%Y-%m-%d %H:%M:%S'))
   end
 
   def cmd_add_filter_options(cmd)
@@ -299,6 +303,7 @@ class LogsCmd
       pretty: true,
       raw: false,
       insensitive: true,
+      sprintf: '%Y-%m-%d %H:%M:%S',
       align: false,
       indent: false,
       severity: nil,
