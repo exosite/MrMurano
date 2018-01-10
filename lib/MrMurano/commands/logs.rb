@@ -63,6 +63,7 @@ class LogsCmd
     # Add global solution flag: --type [application|product].
     cmd_add_solntype_pickers(cmd, exclude_all: true)
     cmd_add_logs_options(cmd)
+    cmd_add_format_options(cmd)
     cmd_add_filter_options(cmd)
     cmd.action do |args, options|
       @options = options
@@ -192,6 +193,20 @@ class LogsCmd
     )
   end
 
+  def cmd_add_format_options(cmd)
+    cmd_add_format_options_align_columns(cmd)
+    cmd_add_format_options_indent_body(cmd)
+  end
+
+  def cmd_add_format_options_align_columns(cmd)
+    cmd.option '--[no-]align', %(Align columns in formatted output)
+  end
+
+  def cmd_add_format_options_indent_body(cmd)
+    cmd.option '--[no-]indent', %(Indent body content in formatted output)
+  end
+  end
+
   def cmd_add_filter_options(cmd)
     # Common log fields.
     cmd_add_filter_option_severity(cmd)
@@ -284,6 +299,8 @@ class LogsCmd
       pretty: true,
       raw: false,
       insensitive: true,
+      align: false,
+      indent: false,
       severity: nil,
       types: [],
       message: nil,
