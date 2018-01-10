@@ -363,11 +363,10 @@ class LogsCmd
     n_formatting += 1 if @options.json
     n_formatting += 1 if @options.yaml
     n_formatting += 1 if @options.pp
-    if n_formatting > 1
-      format_options = '--raw, --message-only, --one-line, --json, --yaml, or --pp'
-      warn "Try using just one of #{format_options}, but not two or more."
-      exit 1
-    end
+    return unless n_formatting > 1
+    format_options = '--raw, --message-only, --one-line, --json, --yaml, or --pp'
+    warn "Try using just one of #{format_options}, but not two or more."
+    exit 1
   end
 
   def cmd_get_sol!
