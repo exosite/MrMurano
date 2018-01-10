@@ -450,7 +450,7 @@ class LogsCmd
         end
       end
     end
-    query_parts['severity'] = { '$in': indices }
+    query_parts['severity'] = { '$in' => indices }
   end
 
   def assemble_query_types_array(query_parts)
