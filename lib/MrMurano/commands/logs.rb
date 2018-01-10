@@ -186,6 +186,10 @@ class LogsCmd
     cmd.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
     cmd.option '--[no-]pretty', %(Reformat JSON blobs in logs)
     cmd.option '--raw', %(Do not format the log data)
+    cmd.option(
+      '-i', '--[no-]insensitive',
+      %(Use case-insensitive matching (default: true))
+    )
   end
 
   def cmd_add_filter_options(cmd)
@@ -279,6 +283,7 @@ class LogsCmd
       localtime: true,
       pretty: true,
       raw: false,
+      insensitive: true,
       severity: nil,
       types: [],
       message: nil,
