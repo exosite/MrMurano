@@ -149,6 +149,10 @@ class LogsCmd
     ).strip, 'murano logs'
 
     cmd.example %(
+      View the last 10 product log entries
+    ).strip, 'murano logs --limit 10'
+
+    cmd.example %(
       Stream the application logs, including the last 100 records
     ).strip, 'murano logs --follow'
 
@@ -179,6 +183,34 @@ class LogsCmd
     cmd.example %(
       Stream logs with the severity levels ALERT, CRITICAL, WARNING, and DEBUG
     ).strip, 'murano logs --follow -V -l 1-2,WARN,7'
+
+    cmd.example %(
+      Show only log entries whose message contains the case-insensitive substring, "hello"
+    ).strip, 'murano logs --message hello'
+
+    cmd.example %(
+      Show only log entries whose message contains the case-sensitive substring, "Hello"
+    ).strip, 'murano logs --message Hello --no-insensitive'
+
+    cmd.example %(
+      Display logs using a custom timestamp format (see `man strftime` for format options)
+    ).strip, %(murano logs --sprintf '%m/%d/%Y %Hh %Mm %Ss')
+
+    cmd.example %(
+      Stream logs using compact format, using one line per log entry
+    ).strip, 'murano logs --follow --one-line'
+
+    cmd.example %(
+      Stream logs using two lines per log entry (1 header line and 1 message line)
+    ).strip, 'murano logs --follow --message-only'
+
+    cmd.example %(
+      Format log entries as JSON (useful if you want to pipe the results, e.g., to `jq`)
+    ).strip, 'murano logs --json'
+
+    cmd.example %(
+      Format log entries as YAML
+    ).strip, 'murano logs --yaml'
   end
 
   def cmd_add_logs_options(cmd)
