@@ -320,6 +320,7 @@ class LogsCmd
 
   def logs_action
     cmd_default_logs_options
+    cmd_verify_logs_options!
     cmd_defaults_solntype_pickers(@options, :application)
     @query = assemble_query
     verbose %(query: #{@query})
@@ -351,6 +352,22 @@ class LogsCmd
       event: nil,
       endpoint: nil,
     )
+  end
+
+  def cmd_verify_logs_options!
+    n_formatting = 0
+    n_formatting += 1 if @options.raw
+    n_formatting += 1 if @options.message_only
+    n_formatting += 1 if @options.one_line
+    # Global options should really be checked elsewhere. Oh, well.
+    n_formatting += 1 if @options.json
+    n_formatting += 1 if @options.yaml
+    n_formatting += 1 if @options.pp
+    if n_formatting > 1
+      format_options = '--raw, --message-only, --one-line, --json, --yaml, or --pp'
+      warn "Try using just one of #{format_options}, but not two or more."
+      exit 1
+    end
   end
 
   def cmd_get_sol!
