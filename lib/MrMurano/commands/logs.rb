@@ -194,8 +194,11 @@ class LogsCmd
     cmd_add_format_options_localtime(cmd)
     cmd_add_format_options_pretty(cmd)
     cmd_add_format_options_raw(cmd)
+    cmd_add_format_options_message_only(cmd)
+    cmd_add_format_options_one_line(cmd)
     cmd_add_format_options_align_columns(cmd)
     cmd_add_format_options_indent_body(cmd)
+    cmd_add_format_options_include_tracking(cmd)
     cmd_add_format_options_sprintf(cmd)
   end
 
@@ -211,12 +214,24 @@ class LogsCmd
     cmd.option '--raw', %(Do not format the log data)
   end
 
+  def cmd_add_format_options_message_only(cmd)
+    cmd.option '-o', '--message-only', %(Show only headers and the 'print' message)
+  end
+
+  def cmd_add_format_options_one_line(cmd)
+    cmd.option '--one-line', %(Squeeze each log entry onto one line (wrapping as necessary))
+  end
+
   def cmd_add_format_options_align_columns(cmd)
     cmd.option '--[no-]align', %(Align columns in formatted output)
   end
 
   def cmd_add_format_options_indent_body(cmd)
     cmd.option '--[no-]indent', %(Indent body content in formatted output)
+  end
+
+  def cmd_add_format_options_include_tracking(cmd)
+    cmd.option '--[no-]tracking', %(Include tracking ID)
   end
 
   def cmd_add_format_options_sprintf(cmd)
@@ -316,6 +331,9 @@ class LogsCmd
       pretty: true,
       raw: false,
       insensitive: true,
+      message_only: false,
+      one_line: false,
+      tracking: false,
       sprintf: '%Y-%m-%d %H:%M:%S',
       align: false,
       indent: false,

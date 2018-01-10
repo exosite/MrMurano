@@ -201,6 +201,7 @@ module MrMurano
       out = ''
       @body_prefix = options.indent && '  ' || ''
       out += log_pretty_assemble_message(line, options)
+      return out if options.message_only
       out += log_pretty_assemble_data(line, options)
       out += log_pretty_assemble_remainder(line, options)
       out + log_pretty_assemble_tracking_id(line, options)
@@ -260,6 +261,7 @@ module MrMurano
     end
 
     def self.log_pretty_assemble_tracking_id(line, options)
+      return '' unless options.tracking
       log_pretty_emphasize_entry(:tracking_id, line, options)
     end
 
