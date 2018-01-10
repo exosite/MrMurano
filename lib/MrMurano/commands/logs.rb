@@ -260,7 +260,7 @@ class LogsCmd
   def cmd_add_filter_option_endpoint(cmd)
     cmd.option(
       '-e', '--endpoint ENDPOINT',
-      %(Filter log entries by the endpoint (ENDPOINT is VERB:PATH or GLOB))
+      %(Filter log entries by the endpoint (ENDPOINT is VERB:PATH))
     ) do |value|
       @filter_endpoints.push value
     end
