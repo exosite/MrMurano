@@ -14,8 +14,9 @@ require 'MrMurano/verbosing'
 module MrMurano
   module Logs
     class Follow
-      def initialize(query)
+      def initialize(query, limit=nil)
         @query = query
+        @limit = limit
       end
 
       def run_event_loop(sol, &block)
@@ -38,7 +39,7 @@ module MrMurano
         ].join('/')
         uri += %(?token=#{sol.token})
         uri += %(&query=#{@query}) unless @query.to_s.empty?
-        uri += %(&limit=#{@options.limit}) unless @options.limit.nil?
+        uri += %(&limit=#{@limit}) unless @limit.nil?
         # MAYBE: (landonb): Add projection options? (Use for tracking exclusion.)
         #   uri += %(&projection={})
         # MAYBE: (landonb): Add limit option? This is number

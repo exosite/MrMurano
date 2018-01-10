@@ -182,13 +182,13 @@ class LogsCmd
   end
 
   def cmd_add_logs_options(cmd)
-    cmd.option '-f', '--follow', %(Follow logs from server)
+    cmd.option '-f', '--[no-]follow', %(Follow logs from server)
     cmd.option '-r', '--retry', %(Always retry the connection)
     cmd.option(
       '-i', '--[no-]insensitive',
       %(Use case-insensitive matching (default: true))
     )
-    cmd.option '-N', '--limit LIMIT', Integer, %(Retrieve this many existing logs at start of command)
+    cmd.option '-N', '--limit LIMIT', Integer, %(Retrieve this many existing logs at start of command (only works with --no-follow))
   end
 
   def cmd_add_format_options(cmd)
@@ -585,7 +585,7 @@ class LogsCmd
     keep_running = true
     while keep_running
       keep_running = @options.retry
-      logs = MrMurano::Logs::Follow.new(@query)
+      logs = MrMurano::Logs::Follow.new(@query, @options.limit)
       logs.run_event_loop(sol) do |line|
         log_entry = parse_logs_line(line)
         if log_entry[:statusCode] == 400
