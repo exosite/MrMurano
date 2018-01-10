@@ -99,10 +99,10 @@ module MrMurano
     def self.log_pretty_assemble_header(line, options)
       out = ''
       raw = ''
-      out, raw = log_pretty_header_add_abbreviated_sev(line, out, raw, options)
-      out, raw = log_pretty_header_add_log_record_type(line, out, raw, options)
       out, raw = log_pretty_header_add_event_timestamp(line, out, raw, options)
       out, raw = log_pretty_header_add_murano_tracking(line, out, raw, options)
+      out, raw = log_pretty_header_add_log_record_type(line, out, raw, options)
+      out, raw = log_pretty_header_add_abbreviated_sev(line, out, raw, options)
       out, _raw = log_pretty_header_add_a_service_event(line, out, raw, options)
       out + "\n"
     end
