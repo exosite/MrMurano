@@ -500,7 +500,7 @@ class LogsCmd
     else
       operator = '$nin'
     end
-    query_parts[field] = { "#{operator}": resolved_terms }
+    query_parts[field] = { "#{operator}" => resolved_terms }
   end
 
   def term_indicates_exclude?(term)
