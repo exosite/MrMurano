@@ -184,9 +184,6 @@ class LogsCmd
   def cmd_add_logs_options(cmd)
     cmd.option '-f', '--follow', %(Follow logs from server)
     cmd.option '-r', '--retry', %(Always retry the connection)
-    cmd.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
-    cmd.option '--[no-]pretty', %(Reformat JSON blobs in logs)
-    cmd.option '--raw', %(Do not format the log data)
     cmd.option(
       '-i', '--[no-]insensitive',
       %(Use case-insensitive matching (default: true))
@@ -194,9 +191,24 @@ class LogsCmd
   end
 
   def cmd_add_format_options(cmd)
+    cmd_add_format_options_localtime(cmd)
+    cmd_add_format_options_pretty(cmd)
+    cmd_add_format_options_raw(cmd)
     cmd_add_format_options_align_columns(cmd)
     cmd_add_format_options_indent_body(cmd)
     cmd_add_format_options_sprintf(cmd)
+  end
+
+  def cmd_add_format_options_localtime(cmd)
+    cmd.option '--[no-]localtime', %(Adjust Timestamps to be in local time)
+  end
+
+  def cmd_add_format_options_pretty(cmd)
+    cmd.option '--[no-]pretty', %(Reformat JSON blobs in logs)
+  end
+
+  def cmd_add_format_options_raw(cmd)
+    cmd.option '--raw', %(Do not format the log data)
   end
 
   def cmd_add_format_options_align_columns(cmd)
