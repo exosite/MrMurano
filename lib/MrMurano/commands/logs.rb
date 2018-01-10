@@ -299,6 +299,7 @@ class LogsCmd
       type: :application,
       follow: false,
       retry: false,
+      limit: nil,
       localtime: true,
       pretty: true,
       raw: false,
@@ -495,12 +496,7 @@ class LogsCmd
   end
 
   def logs_once(sol)
-    # NOTE (lb): Unsure whether we need to encode parts of the query,
-    # possibly with CGI.escape. Note that http.get calls
-    # URI.encode_www_form(query), which the server will accept,
-    # but it will not produce any results.
-    query = @query.empty? && '' || "?query=#{@query}"
-    ret = sol.get("/logs#{query}")
+    ret = sol.get("/logs#{query_string}")
     if ret.is_a?(Hash) && ret.key?(:items)
       ret[:items].reverse.each do |line|
         if @options.raw
@@ -513,6 +509,19 @@ class LogsCmd
       sol.error "Could not get logs: #{ret}"
       exit 1
     end
+  end
+
+  def query_string
+    # NOTE (lb): Unsure whether we need to encode parts of the query,
+    # possibly with CGI.escape. Note that http.get calls
+    # URI.encode_www_form(query), which the server will accept,
+    # but it will not produce any results.
+    params = []
+    params += ["query=#{@query}"] unless @query.empty?
+    params += ["limit=#{@options.limit}"] unless @options.limit.nil?
+    querys = params.join('&')
+    querys = "?#{querys}" unless querys.empty?
+    querys
   end
 
   # LATER/2017-12-14 (landonb): Show logs from all associated solutions.

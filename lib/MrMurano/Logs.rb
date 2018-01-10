@@ -38,6 +38,7 @@ module MrMurano
         ].join('/')
         uri += %(?token=#{sol.token})
         uri += %(&query=#{@query}) unless @query.to_s.empty?
+        uri += %(&limit=#{@options.limit}) unless @options.limit.nil?
         # MAYBE: (landonb): Add projection options? (Use for tracking exclusion.)
         #   uri += %(&projection={})
         # MAYBE: (landonb): Add limit option? This is number
