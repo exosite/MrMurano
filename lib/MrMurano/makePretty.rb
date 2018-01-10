@@ -89,8 +89,9 @@ module MrMurano
     end
 
     def self.fmt_text_padded(text, style, out, raw, options, min_width: 0)
-      min_width = text.length + 3 unless options.align
-      if options.align && min_width == 0
+      inter_spaces = (min_width == 0) && 0 || options.one_line && 1 || 3
+      min_width = text.length + inter_spaces unless options.align
+      if !options.one_line && options.align && min_width == 0
         prefix = TERM_WIDTH - raw.length - text.length
         out += ' ' * prefix
         raw += ' ' * prefix
@@ -109,7 +110,8 @@ module MrMurano
       out, raw = log_pretty_header_add_murano_tracking(line, out, raw, options)
       out, raw = log_pretty_header_add_log_record_type(line, out, raw, options)
       out, raw = log_pretty_header_add_abbreviated_sev(line, out, raw, options)
-      out, _raw = log_pretty_header_add_a_service_event(line, out, raw, options)
+      out, raw = log_pretty_header_add_a_service_event(line, out, raw, options)
+      out, _raw = log_pretty_header_add_message(line, out, raw, options)
       out + "\n"
     end
 
@@ -161,7 +163,8 @@ module MrMurano
 
     def self.log_pretty_header_add_event_timestamp(line, out, raw, options)
       curtime = fmt_log_record_timestamp(line, options)
-      min_width = curtime.length + 3
+      inter_spaces = options.one_line && 1 || 3
+      min_width = curtime.length + inter_spaces
       fmt_text_padded(curtime, :timestamp, out, raw, options, min_width: min_width)
     end
 
@@ -203,8 +206,16 @@ module MrMurano
       fmt_text_padded(svc_evt, :subject, out, raw, options, min_width: 0)
     end
 
+    def self.log_pretty_header_add_message(line, out, raw, options)
+      return [out, raw] unless options.one_line
+      return [out, raw] unless line.key?(:message) && !line[:message].to_s.empty?
+      msg = ' ' + line[:message]
+      [out + msg, raw + msg]
+    end
+
     def self.log_pretty_assemble_body(line, options)
       out = ''
+      return out if options.one_line
       @body_prefix = options.indent && '  ' || ''
       out += log_pretty_assemble_message(line, options)
       return out if options.message_only
