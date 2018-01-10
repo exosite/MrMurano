@@ -188,6 +188,7 @@ class LogsCmd
       '-i', '--[no-]insensitive',
       %(Use case-insensitive matching (default: true))
     )
+    cmd.option '-N', '--limit LIMIT', Integer, %(Retrieve this many existing logs at start of command)
   end
 
   def cmd_add_format_options(cmd)
