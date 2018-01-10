@@ -370,10 +370,22 @@ class LogsCmd
   end
 
   def assemble_query_endpoint(query_parts)
-    assemble_string_search_many(query_parts, 'endpoint', @filter_endpoints)
+    terms = @filter_endpoints.map { |endp| format_endpoint(endp) }
+    # FIXME: (lb): MUR-5446: Still unresolved: How to query endpoints.
+    #   The RFC says to use 'endpoint', but I've also been told to use
+    #   'data.section.' Neither work for me.
+    assemble_string_search_many(query_parts, 'data.section', terms)
   end
 
-  def assemble_string_search_one(query_parts, field, value)
+  def format_endpoint(endp)
+    # E.g., ?query={"data.section":"get_/set"}
+    # The format the user is most likely to use is with a colon, but
+    # we can let the user be a little sloppy, too, e.g., "get /set".
+    parts = endp.split(' ', 2)
+    parts = endp.split(':', 2) unless parts.length > 1
+    parts.join('_').downcase
+  end
+
     return if value.to_s.empty?
     # FIXME/MUR-XXX: Once Pegasus is fixed, this:
     #   query_parts[field] = { '$regex': "/#{value}/i" }
