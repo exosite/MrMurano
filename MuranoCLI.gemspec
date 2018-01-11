@@ -29,17 +29,8 @@ And so much more.
   ).strip
   s.required_ruby_version = '~> 2.0'
 
-  # FIXME: 2017-05-25: Remove this message eventually.
-  s.post_install_message = %(
-MuranoCLI v3.0 introduces backwards-incompatible changes.
-
-If your business was created with MuranoCLI v2.x, you will
-want to continue using the old gem, which you can run by
-explicitly specifying the version. For instance,
-
-  murano _2.2.4_ --version
-
-)
+  # If you want to print a message on Gem install, use the P.I.M., e.g.,:
+  #   s.post_install_message = %(...)
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
