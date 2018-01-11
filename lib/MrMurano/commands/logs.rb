@@ -81,60 +81,60 @@ class LogsCmd
 
   def cmd_add_help(cmd)
     cmd.description = %(
-      Get the logs for a solution.
+Get the logs for a solution.
 
-      Each log record contains a number of fields, including the following.
+Each log record contains a number of fields, including the following.
 
-      Severity
-      ================================================================
-      The severity of the log message, as defined by rsyslog standard.
+Severity
+================================================================
+The severity of the log message, as defined by rsyslog standard.
 
-        ID | Name          | Description
-        -- | ------------- | -----------------------------------------
-        0  | Emergency     | System is unusable
-        1  | Alert         | Action must be taken immediately
-        2  | Critical      | Critical conditions
-        3  | Error         | Error conditions
-        4  | Warning       | Warning conditions
-        5  | Notice        | Normal but significant condition
-        6  | Informational | Informational messages
-        7  | Debug         | Debug-level messages
+  ID | Name          | Description
+  -- | ------------- | -----------------------------------------
+  0  | Emergency     | System is unusable
+  1  | Alert         | Action must be taken immediately
+  2  | Critical      | Critical conditions
+  3  | Error         | Error conditions
+  4  | Warning       | Warning conditions
+  5  | Notice        | Normal but significant condition
+  6  | Informational | Informational messages
+  7  | Debug         | Debug-level messages
 
-      Type
-      ================================================================
-      The type (emitter system) of the message.
+Type
+================================================================
+The type (emitter system) of the message.
 
-        Name    | Description
-        ------- | ----------------------------------------------------
-        Script  | Script Engine: When User Lua script calls `print()`
-        Call    | Dispatcher: On service calls from Lua
-        Event   | Dispatcher: On event trigger from services
-        Config  | API: On solution configuration change, or
-                |      used service deprecation warning
-        Service | Services generated & transmitted to Dispatcher
+  Name    | Description
+  ------- | ----------------------------------------------------
+  Script  | Script Engine: When User Lua script calls `print()`
+  Call    | Dispatcher: On service calls from Lua
+  Event   | Dispatcher: On event trigger from services
+  Config  | API: On solution configuration change, or
+          |      used service deprecation warning
+  Service | Services generated & transmitted to Dispatcher
 
 
-      Message
-      ================================================================
-      Message can be up to 64kb containing plain text describing a log
-      of the event.
+Message
+================================================================
+Message can be up to 64kb containing plain text describing a log
+of the event.
 
-      Service
-      ================================================================
-      The service via which the event name is coming or the service of
-      which the function is called.
+Service
+================================================================
+The service via which the event name is coming or the service of
+which the function is called.
 
-      Event
-      ================================================================
-      Depending on the type:
+Event
+================================================================
+Depending on the type:
 
-        Event, Script => Event name
-        Call          => operationId
+  Event, Script => Event name
+  Call          => operationId
 
-      Tracking ID
-      ================================================================
-      End to end Murano processing id.
-      Used to group logs together for one endpoint request.
+Tracking ID
+================================================================
+End to end Murano processing id.
+Used to group logs together for one endpoint request.
     ).strip
   end
 
@@ -295,9 +295,9 @@ class LogsCmd
     cmd.option(
       '-l', '--severity [NAME|LEVEL|RANGE[,NAME|LEVEL|RANGE...]]', Array,
       %(
-        Only show log entries of this severity.
-        May be specified by name, value, or range, e.g., WARN, 3, 1-4.
-          #{LOG_SEVERITIES.map.with_index { |s, i| "#{s}(#{i})" }.join(' ')}
+Only show log entries of this severity.
+May be specified by name, value, or range, e.g., WARN, 3, 1-4.
+  #{LOG_SEVERITIES.map.with_index { |s, i| "#{s}(#{i})" }.join(' ')}
       ).strip
     ) do |value|
       @filter_severity.push value
@@ -306,10 +306,10 @@ class LogsCmd
 
   def cmd_add_filter_option_type(cmd)
     emitter_type_help = %(
-      Filter log entries by type (emitter system) of message.
-      EMITTERS is 1 or more comma-separated types:
-        #{LOG_EMITTER_TYPES.map(&:to_s)}
-      Use a "#{INCLUDE_INDICATOR}" or "#{EXCLUDE_INDICATOR}" prefix to include or exclude types, respectively.
+Filter log entries by type (emitter system) of message.
+EMITTERS is 1 or more comma-separated types:
+  #{LOG_EMITTER_TYPES.map(&:to_s)}
+Use a "#{INCLUDE_INDICATOR}" or "#{EXCLUDE_INDICATOR}" prefix to include or exclude types, respectively.
     ).strip
     cmd.option('-T EMITTERS', '--types EMITTERS', Array, emitter_type_help) do |values|
       # This seems a little roundabout, but rb-commander only keeps last value.
