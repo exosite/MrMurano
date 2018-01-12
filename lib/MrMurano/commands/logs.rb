@@ -277,16 +277,15 @@ Used to group logs together for one endpoint request.
   end
 
   def cmd_add_filter_options(cmd)
-    # Common log fields.
     cmd_add_filter_option_severity(cmd)
     cmd_add_filter_option_type(cmd)
     cmd_add_filter_option_message(cmd)
     cmd_add_filter_option_service(cmd)
     cmd_add_filter_option_event(cmd)
+    # FIXME/2018-01-12: MUR-5446: Backend issue supporting endpoint query.
+    #   cmd_add_filter_option_endpoint(cmd)
     # Skipping: timestamp filter
     # Skipping: tracking_id filter
-    # Type-specific fields in data.
-    cmd_add_filter_option_endpoint(cmd)
     # Skipping: module filter
     # Skipping: elapsed time filter (i.e., could do { elapsed: { $gt: 10 } })
   end
