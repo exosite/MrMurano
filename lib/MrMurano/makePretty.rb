@@ -216,7 +216,6 @@ module MrMurano
     def self.log_pretty_assemble_body(line, options)
       out = ''
       return out if options.one_line
-      @body_prefix = options.indent && '  ' || ''
       out += log_pretty_assemble_message(line, options)
       return out if options.message_only
       out += log_pretty_assemble_data(line, options)
@@ -224,9 +223,9 @@ module MrMurano
       out + log_pretty_assemble_tracking_id(line, options)
     end
 
-    def self.log_pretty_assemble_message(line, _options)
+    def self.log_pretty_assemble_message(line, options)
       return '' unless line.key?(:message) && !line[:message].to_s.empty?
-      @body_prefix + line[:message] + "\n"
+      body_prefix(options) + line[:message] + "\n"
     end
 
     def self.log_pretty_assemble_data(line, options)
@@ -244,8 +243,12 @@ module MrMurano
 
     def self.log_pretty_emphasize_entry(entry, hash, options)
       return '' unless hash.key?(entry) && !hash[entry].empty?
-      out = @body_prefix + "---------\n" if options.separators
-      out += @body_prefix + "#{entry}: "
+      out = body_prefix(options) + "---------\n" && options.separators || ''
+      out + log_pretty_entry_value(entry, hash, options)
+    end
+
+    def self.log_pretty_entry_value(entry, hash, options)
+      out = body_prefix(options) + "#{entry}: "
       out += log_pretty_json(hash[entry], options)
       out + "\n"
     end
@@ -257,8 +260,8 @@ module MrMurano
       ]
       data = data.reject { |key, _val| known_keys.include?(key) }
       return '' if data.empty?
-      out = options.separators && (@body_prefix + "---------\n") || ''
-      out + @body_prefix + 'data: ' + log_pretty_json(data, options) + "\n"
+      out = options.separators && (body_prefix(options) + "---------\n") || ''
+      out + body_prefix(options) + 'data: ' + log_pretty_json(data, options) + "\n"
     end
 
     def self.log_pretty_assemble_remainder(line, options)
@@ -274,20 +277,25 @@ module MrMurano
       ]
       line = line.reject { |key, _val| known_keys.include?(key) }
       return '' if line.empty?
-      @body_prefix + log_pretty_json(line, options) + "\n"
+      body_prefix(options) + log_pretty_json(line, options) + "\n"
     end
 
     def self.log_pretty_assemble_tracking_id(line, options)
       return '' unless options.tracking
-      log_pretty_emphasize_entry(:tracking_id, line, options)
+      log_pretty_entry_value(:tracking_id, line, options)
     end
 
     def self.log_pretty_json(hash, options)
       return '' if hash.empty?
-      prefix = @body_prefix.to_s.empty? && '  ' || @body_prefix
+      prefix = body_prefix(options)
+      prefix = prefix.to_s.empty? && '  ' || prefix
       makeJsonPretty(
-        hash, options, indent: prefix, object_nl: "\n" + @body_prefix
+        hash, options, indent: prefix, object_nl: "\n" + prefix
       )
+    end
+
+    def self.body_prefix(options)
+      options.indent && '  ' || ''
     end
   end
 end
