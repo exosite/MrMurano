@@ -532,7 +532,7 @@ Use a "#{INCLUDE_INDICATOR}" or "#{EXCLUDE_INDICATOR}" prefix to include or excl
     else
       operator = '$nin'
     end
-    query_parts[field] = { "#{operator}" => resolved_terms }
+    query_parts[field] = { operator.to_s => resolved_terms }
   end
 
   def term_indicates_exclude?(term)

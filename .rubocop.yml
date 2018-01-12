@@ -111,7 +111,7 @@ Style/EmptyMethod:
   Enabled: false
 
 # "The name of this source file (Xxxxxxx.rb) should use snake_case."
-Naming/FileName:
+Style/FileName:
   Exclude:
     - 'Gemfile'
     - 'MuranoCLI.gemspec'
