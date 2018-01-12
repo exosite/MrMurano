@@ -60,9 +60,7 @@ RSpec.describe MrMurano::Pretties do
              subject: 'websocket_websocket_info',
              data: 'Script Error: ', }
     ldt = Time.at(1_476_386_031).localtime.strftime('%Y-%m-%d %H:%M:%S')
-    local_user = ENV['USER'] || ENV['USERNAME']
-    hour_of_day = (local_user == 'travis') && '19' || '14'
-    str = "\e[36mDEBUG \e[0m\e[36m[websocket_websocket_info]\e[0m \e[34m2016-10-13 #{hour_of_day}:13:51\e[0m:\nScript Error: "
+    str = "\e[36mDEBUG \e[0m\e[36m[websocket_websocket_info]\e[0m \e[34m#{ldt}\e[0m:\nScript Error: "
     @options[:localtime] = true
     ret = MrMurano::Pretties.MakePrettyLogsV1(data, @options)
     @options[:localtime] = false
