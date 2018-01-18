@@ -1,5 +1,5 @@
 #FROM vallard/nginx
-FROM jessie
+FROM debian:jessie
 #MAINTAINER Vallard Benincosa "vallard@benincosa.com"
 RUN apt-get update
 # install the prerequisite patches here so that rvm will install under non-root account. 
