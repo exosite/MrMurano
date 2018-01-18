@@ -88,14 +88,15 @@ echo "##########################################################################
 echo "Testing \"$(murano -v)\" on \"$(ruby -v)\""
 echo "############################################################################################"
 
-/bin/ls -la /app
-/bin/ls -la /app/report
-/bin/ls -la /app/coverage
+
+echo "Ruby: $(ruby -v)"
+
 
 # Hint: Add `--example "<...>"` to limit the test suite.
 
 rspec \
   --format html \
   --out /app/report/index-${RVERS}.html \
-  --format documentation
+  --format documentation \
+  --example 'murano init in existing project directory with SolutionFile 0.2.0'
 

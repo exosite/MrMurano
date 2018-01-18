@@ -2,6 +2,25 @@
 Murano CLI Jenkins Notes
 ########################
 
+.. code-block:: bash
+
+  for ruby_vers in \
+    "2.5.0" \
+    "2.4.3" \
+    "2.3.6" \
+    "2.2.9" \
+
+
+  m4 \
+    --define=RUBY_VERSION="2.3.6" \
+      dockers/Dockerfile.m4 \
+    > dockers/Dockerfile.
+
+
+    &> /dev/null
+  sudo /etc/init.d/postgresql restart
+
+
 =============================
 Jenkins project configuration
 =============================
