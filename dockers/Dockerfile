@@ -111,6 +111,8 @@ ENV PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
 #  rake build
 RUN cd /app
 RUN gem install --user-install bundler
+RUN which bundler
+RUN /bin/ls -la /home/jenkins/.gem/ruby/2.1.0/bin
 RUN gem install --user-install rspec
 RUN /bin/ls -la /home/jenkins/.gem
 RUN /bin/ls -la /home/jenkins/.gem/ruby
