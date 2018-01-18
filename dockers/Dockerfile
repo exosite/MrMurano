@@ -40,7 +40,7 @@ RUN git clone https://github.com/rbenv/ruby-build.git /home/jenkins/.rbenv/plugi
 
 RUN /bin/ls -la /home/jenkins/.rbenv
 
-RUN export PATH="/home/jenkins/.rbenv/bin:$PATH"
+ENV PATH="/home/jenkins/.rbenv/bin:${PATH}"
 RUN rbenv versions || echo none
 RUN rbenv install 2.3.4 || echo DONE
 RUN rbenv install 2.4.1 || echo DONE
