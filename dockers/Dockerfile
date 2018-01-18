@@ -17,9 +17,22 @@ RUN \
     >> /etc/apt/sources.list \
   && apt-get -qq update \
   && apt-get install -y sudo
+
+ENV LANGUAGE en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
 RUN apt-get install -y locales
 RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+
+[91mperl: warning: Setting locale failed.
+[0m[91mperl: warning: Please check that your locale settings:
+[0m[91m	LANGUAGE = "en_US.UTF-8",
+[0m[91m	LC_ALL = "en_US.UTF-8",
+[0m[91m	LANG = "en_US.UTF-8"
+[0m[91m    are supported and installed on your system.
+[0m[91mperl: warning: Falling back to the standard locale ("C").
 
 #ENV LANGUAGE en_US.UTF-8
 #ENV LANG en_US.UTF-8
@@ -71,4 +84,26 @@ RUN rbenv install 2.4.1 || echo DONE
 RUN rbenv install 2.2.7 || echo DONE
 RUN rbenv rehash
 RUN rbenv versions
+
+
+
+
+RUN cd /app && \
+  gem install bundler && \
+  gem install rspec && \
+  bundler install && \
+  rake build
+
+# Install Murano CLI.
+
+RUN gem install \
+	pkg/MuranoCLI-$(ruby -e \
+		'require "/app/lib/MrMurano/version.rb"; puts MrMurano::VERSION' \
+	).gem
+
+# vim:tw=0:ts=4:sw=4:noet:ft=conf:
+
+
+
+
 
