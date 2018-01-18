@@ -67,7 +67,7 @@ export MURANO_CONFIGFILE="${WORKSPACE}/test.run.muranocfg"
 
 cd /app
 
-# Instead of `rake test_clean_up -t`, call CLI with additional --options.
+# Instead of `rake test_clean_up -t`, call CLI directly with --no-color.
 
 echo "Removing existing solutions from Murano account."
 
