@@ -23,11 +23,13 @@ RUN \
 #ENV LC_ALL en_US.UTF-8
 
 RUN apt-get install -y locales
-RUN locale -a
-RUN locale-gen en_US.UTF-8
-RUN locale -a
-ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
-RUN locale -a
+#RUN locale -a
+#RUN locale-gen en_US.UTF-8
+#RUN locale -a
+#ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+#RUN locale -a
+ENV LANG='C.UTF-8' LANGUAGE='C.UTF-8' LC_ALL='C.UTF-8'
+
 
 #[91mperl: warning: Setting locale failed.
 #[0m[91mperl: warning: Please check that your locale settings:
@@ -41,8 +43,11 @@ RUN locale -a
 #ENV LANG en_US.UTF-8
 #ENV LC_ALL en_US.UTF-8
 #RUN locale-gen en_US.UTF-8
-RUN dpkg-reconfigure locales
-
+# dpkg-reconfigure locales is interactive
+#RUN dpkg-reconfigure locales
+RUN locale-gen --purge
+# update-locale is for updating /etc/default/locale, so maybe something else?
+RUN update-locale LANG=en_US.UTF-8
 
 
 RUN useradd -m -s /bin/bash --uid 1001 -G root jenkins
