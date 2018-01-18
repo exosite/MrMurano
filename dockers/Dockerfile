@@ -97,7 +97,7 @@ RUN rbenv rehash
 RUN rbenv versions
 
 
-ruby -rubygems -e 'puts Gem.user_dir'
+RUN ruby -rubygems -e 'puts Gem.user_dir'
 #if which ruby >/dev/null && which gem >/dev/null; then
 #[91mWARNING:  You don't have /home/jenkins/.gem/ruby/2.1.0/bin in your PATH,
 ENV PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
