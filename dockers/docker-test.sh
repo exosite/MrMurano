@@ -88,6 +88,7 @@ echo "#####################################################################"
 echo "Testing \"$(murano -v)\" on \"$(ruby -v)\""
 echo "#####################################################################"
 
+echo "\${LANG}: ${LANG}"
 /bin/ls -la /app
 /bin/ls -la /app/report
 /bin/ls -la /app/coverage
