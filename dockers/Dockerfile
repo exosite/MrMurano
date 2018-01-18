@@ -86,6 +86,7 @@ RUN git clone https://github.com/rbenv/ruby-build.git /home/jenkins/.rbenv/plugi
 #fi
 
 RUN /bin/ls -la /home/jenkins/.rbenv
+RUN /bin/ls -la /home/jenkins/.rbenv/bin
 
 ENV PATH="/home/jenkins/.rbenv/bin:${PATH}"
 RUN rbenv versions || echo none
@@ -96,6 +97,11 @@ RUN rbenv rehash
 RUN rbenv versions
 
 
+ruby -rubygems -e 'puts Gem.user_dir'
+#if which ruby >/dev/null && which gem >/dev/null; then
+#[91mWARNING:  You don't have /home/jenkins/.gem/ruby/2.1.0/bin in your PATH,
+ENV PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
+#fi
 
 
 #RUN cd /app && \
