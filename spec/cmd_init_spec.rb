@@ -392,6 +392,10 @@ RSpec.describe 'murano init', :cmd do
         creates_some_default_directories: true,
       )
       out_lines = out.lines.map { |line| strip_fancy(line) }
+$stdout.print("out_lines:\n")
+$stdout.print(out_lines)
+$stdout.print("expected:\n")
+$stdout.print(expected)
       expect(out_lines).to match_array(expected)
       expect(err).to eq('')
       expect(status.exitstatus).to eq(0)

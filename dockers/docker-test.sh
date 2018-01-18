@@ -84,14 +84,14 @@ PATH=${PATH}:/usr/local/bundle/bin
 #   chmod 2777 /app/report
 #   chmod 2777 /app/coverage
 
-echo "#####################################################################"
+echo "############################################################################################"
 echo "Testing \"$(murano -v)\" on \"$(ruby -v)\""
-echo "#####################################################################"
+echo "############################################################################################"
 
-echo "\${LANG}: ${LANG}"
-/bin/ls -la /app
-/bin/ls -la /app/report
-/bin/ls -la /app/coverage
+#echo "\${LANG}: ${LANG}"
+#/bin/ls -la /app
+#/bin/ls -la /app/report
+#/bin/ls -la /app/coverage
 
 # Hint: Add `--example "<...>"` to limit the test suite.
 
