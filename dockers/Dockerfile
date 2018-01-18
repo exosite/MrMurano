@@ -69,11 +69,53 @@ RUN \
   && apt-get -qq update \
   && apt-get install -y sudo \
   && apt-get install -y git \
-  && apt-get install -y ruby
+  && apt-get install -y ruby \
+  && apt-get install -y wget \
+  && apt-get install -y tar
 
 
 
+
+RUN mkdir -p /chruby && /bin/chown -R jenkins /chruby
 USER jenkins
+RUN cd /chruby
+RUN wget -O ruby-install-0.6.0.tar.gz https://github.com/postmodern/ruby-install/archive/v0.6.0.tar.gz
+RUN tar -xzvf ruby-install-0.6.0.tar.gz
+RUN cd ruby-install-0.6.0
+USER root
+RUN make install
+USER jenkins
+RUN ruby-install --latest ruby 2.3.3
+#RUN ruby-install --latest ruby 2.2
+#RUN ruby-install --latest ruby 2
+#RUN ruby-install --latest ruby 2.0.0-p648
+#RUN ruby-install --latest ruby 2.4.0
+#RUN ruby-install --latest ruby 2.4.2
+
+
+RUN cd /chruby
+RUN wget -O chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.3.9.tar.gz
+RUN tar -xzvf chruby-0.3.9.tar.gz
+RUN cd chruby-0.3.9
+USER root
+RUN make install
+USER jenkins
+
+RUN chruby
+RUN chruby 2.3.3
+RUN chruby
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #if [ -e "$HOME/.rbenv" -a ! -d "$HOME/.rbenv" ]; then
@@ -111,7 +153,8 @@ ENV PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
 #  rake build
 RUN cd /app
 RUN gem install --user-install bundler
-RUN which bundler
+#The command '/bin/sh -c which bundler' returned a non-zero code: 1
+#RUN which bundler
 RUN /bin/ls -la /home/jenkins/.gem/ruby/2.1.0/bin
 RUN gem install --user-install rspec
 RUN /bin/ls -la /home/jenkins/.gem
