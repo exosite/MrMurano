@@ -3,7 +3,7 @@ FROM ruby:2.3.6-jessie
 # NOTE: Environs from Jenkins, like ${WORKSPACE} or any passwords you
 #   inject, are not available from here (Build Environment setup).
 
-RUN echo "can't cache me"
+RUN echo "can't cache won't cache"
 
 # This is already a given, but just to be clear:
 USER root
@@ -55,16 +55,16 @@ RUN useradd -m -s /bin/bash --uid 1001 -G root jenkins
 # Ug. Give jenkins user power to fix permissions on the mounted Volumes:
 # /app/report and /app/coverage mount as 2755 root:root.
 # NOTE: Skipping `RUN apt-get upgrade -y` to run faster.
-RUN \
-  echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
-    >> /etc/apt/sources.list \
-  && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
-    >> /etc/apt/sources.list \
-  && apt-get -qq update \
-  && apt-get install -y sudo
+#RUN \
+#  echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+#    >> /etc/apt/sources.list \
+#  && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+#    >> /etc/apt/sources.list \
+#  && apt-get -qq update \
+#  && apt-get install -y sudo
 # We shouldn't need to give full sudo. But if we did:
 #   RUN echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-RUN echo "jenkins ALL= NOPASSWD: chmod" >> /etc/sudoers
+#RUN echo "jenkins ALL= NOPASSWD: chmod" >> /etc/sudoers
 
 # Create the /app directory and give ownership to the new user, otherwise
 # if we switch to the new user first, they cannot create the workdir.
