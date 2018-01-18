@@ -71,7 +71,8 @@ RUN \
   && apt-get install -y git \
   && apt-get install -y ruby \
   && apt-get install -y wget \
-  && apt-get install -y tar
+  && apt-get install -y tar \
+  && apt-get install -y build-essential
 
 
 
