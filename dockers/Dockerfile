@@ -3,6 +3,8 @@ FROM ruby:2.3.6-jessie
 # NOTE: Environs from Jenkins, like ${WORKSPACE} or any passwords you
 #   inject, are not available from here (Build Environment setup).
 
+RUN echo "can't cache me"
+
 # This is already a given, but just to be clear:
 USER root
 
