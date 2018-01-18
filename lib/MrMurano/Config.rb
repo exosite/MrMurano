@@ -7,6 +7,7 @@
 
 require 'highline'
 require 'inifile'
+require 'os'
 require 'pathname'
 require 'rainbow'
 require 'MrMurano/verbosing'
@@ -47,7 +48,7 @@ module MrMurano
         if defined?($cfg) && !$cfg.nil? && $cfg['tool.dry']
           # $cfg.nil? when run from spec tests that don't load it with:
           #   include_context "CI_CMD"
-          MrMurano::Verbose.warning('--dry: Not writing config file')
+          warning('--dry: Not writing config file')
           return
         end
         self[:path] = Pathname.new(path) unless path.is_a?(Pathname)
@@ -332,13 +333,44 @@ module MrMurano
         root = nil
       when :project
         root = @project_dir + CFG_DIR_NAME
+        verbose %(file_at: @project_dir: #{@project_dir} / + #{CFG_DIR_NAME} / #{root})
       when :user
         root = Pathname.new(Dir.home) + CFG_DIR_NAME
+        verbose %(file_at: Dir.home: #{Dir.home} / + #{CFG_DIR_NAME} / #{root})
       when :defaults
         root = nil
       end
       return nil if root.nil?
-      root.mkpath
+      begin
+        root.mkpath
+      rescue StandardError => err
+        error %(Failed to "#{root}".mkpath: #{err})
+        verbose %(Dir.pwd: #{Dir.pwd})
+        if OS.windows?
+          # Ref:
+          #  https://stackoverflow.com/questions/3258518/ruby-get-available-disk-drives
+          require 'win32ole'
+          file_system = WIN32OLE.new('Scripting.FileSystemObject')
+          drives = file_system.Drives
+          drives.each do |drive|
+            verbose %(Drive "#{drive.DriveLetter}":)
+            verbose Dir.entries(drive.Path + '\\')
+          end
+          if root.to_s[1] == ':'
+            # MUR-5081: (lb): I am confused. The user's error is EINVAL:
+            #   in `mkdir': Invalid argument @ dir_s_mkdir - H: (Errno::EINVAL)
+            # Which is very strange. When testing on Windows, I can only generate the
+            # error, ENOENT, "No such file or directory @ dir_s_mkdir - H:." when
+            # trying, e.g., Pathname.new("H:").mkpath, and related. So I'm confused.
+            drive_lr = root.to_s.slice(0, 2)
+            path_start = 2
+            path_start = 3 if root.to_s[2] == '\\'
+            dir_path = root.to_s.slice(path_start, len(root.to_s))
+            verbose %(drive_lr: #{drive_lr} / dir_path: #{dir_path})
+          end
+        end
+        raise
+      end
       root + name
     end
 
