@@ -97,7 +97,8 @@ echo "#####################################################################"
 rspec \
   --format html \
   --out /app/report/index-${RVERS}.html \
-  --format documentation
+  --format documentation \
+  --example 'murano setting Writes (using Device2.identity_format) a number value fiftyHalf'
 #  --example 'murano link with project unlinks'
 
 #rspec --format html --out /app/report/index-${RVERS}.html --format documentation --example 'murano link with project unlinks'
