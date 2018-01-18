@@ -26,13 +26,13 @@ RUN apt-get install -y locales
 RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
 
-[91mperl: warning: Setting locale failed.
-[0m[91mperl: warning: Please check that your locale settings:
-[0m[91m	LANGUAGE = "en_US.UTF-8",
-[0m[91m	LC_ALL = "en_US.UTF-8",
-[0m[91m	LANG = "en_US.UTF-8"
-[0m[91m    are supported and installed on your system.
-[0m[91mperl: warning: Falling back to the standard locale ("C").
+#[91mperl: warning: Setting locale failed.
+#[0m[91mperl: warning: Please check that your locale settings:
+#[0m[91m	LANGUAGE = "en_US.UTF-8",
+#[0m[91m	LC_ALL = "en_US.UTF-8",
+#[0m[91m	LANG = "en_US.UTF-8"
+#[0m[91m    are supported and installed on your system.
+#[0m[91mperl: warning: Falling back to the standard locale ("C").
 
 #ENV LANGUAGE en_US.UTF-8
 #ENV LANG en_US.UTF-8

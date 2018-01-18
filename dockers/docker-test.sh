@@ -69,6 +69,23 @@ cd /app
 
 # Instead of `rake test_clean_up -t`, call CLI directly with --no-color.
 
+
+
+echo "Ruby: $(ruby -v)"
+echo 2.4.1
+export PATH="$HOME/.rbenv/bin:$HOME/.rbenv/shims:$PATH"
+export RBENV_VERSION=2.4.1
+echo "Ruby: $(ruby -v)"
+gem install bundler
+bundler install
+#[ ${GIT_BRANCH} = "origin/feature/windows" ] && export MURANO_PASSWORD=${LANDON_PASSWORD}
+#rake test_clean_up test
+
+echo "Ruby: $(ruby -v)"
+
+
+
+
 echo "Removing existing solutions from Murano account."
 
 ruby -Ilib bin/murano solutions expunge -y --no-progress --no-color --ascii
@@ -87,10 +104,6 @@ PATH=${PATH}:/usr/local/bundle/bin
 echo "############################################################################################"
 echo "Testing \"$(murano -v)\" on \"$(ruby -v)\""
 echo "############################################################################################"
-
-
-echo "Ruby: $(ruby -v)"
-
 
 # Hint: Add `--example "<...>"` to limit the test suite.
 
