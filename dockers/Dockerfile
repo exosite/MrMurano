@@ -22,7 +22,8 @@ RUN \
     >> /etc/apt/sources.list \
   && apt-get -qq update \
   && apt-get install -y sudo \
-  && apt-get install -y git
+  && apt-get install -y git \
+  && apt-get install -y ruby
 
 
 
