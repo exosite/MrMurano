@@ -4,7 +4,21 @@ FROM debian:jessie
 
 USER root
 
-RUN apt-get clean && apt-get -y update && apt-get install -y locales && locale-gen en_US.UTF-8
+# [91mE: Could not open lock file /var/cache/apt/archives/lock - open (2: No such file or directory)
+# E: Unable to lock the download directory
+
+#RUN apt-get clean && apt-get -y update && apt-get install -y locales && locale-gen en_US.UTF-8
+#RUN apt-get clean
+#RUN apt-get -y update
+RUN \
+  echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+    >> /etc/apt/sources.list \
+  && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+    >> /etc/apt/sources.list \
+  && apt-get -qq update \
+  && apt-get install -y sudo
+RUN apt-get install -y locales
+RUN locale-gen en_US.UTF-8
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
 
 #ENV LANGUAGE en_US.UTF-8
