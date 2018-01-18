@@ -52,19 +52,20 @@ ENV LANG en_US.UTF-8
 
 RUN useradd -m -s /bin/bash --uid 1001 -G root jenkins
 
-# Ug. Give jenkins user power to fix permissions on the mounted Volumes:
-# /app/report and /app/coverage mount as 2755 root:root.
+# (lb): So. Weird. Sometimes the Jenkins Docker Volumes mount with 2755
+# permissions. Othertimes with 2777. In case this happens again, I'll
+# leaving this code here. Give jenkins user power to fix permissions on the
+# mounted Volumes: /app/report and /app/coverage mount as 2755 root:root.
 # NOTE: Skipping `RUN apt-get upgrade -y` to run faster.
-#RUN \
-#  echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
-#    >> /etc/apt/sources.list \
-#  && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
-#    >> /etc/apt/sources.list \
-#  && apt-get -qq update \
-#  && apt-get install -y sudo
-# We shouldn't need to give full sudo. But if we did:
-#   RUN echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-#RUN echo "jenkins ALL= NOPASSWD: chmod" >> /etc/sudoers
+#   RUN \
+#     echo "deb http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+#       >> /etc/apt/sources.list \
+#     && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
+#       >> /etc/apt/sources.list \
+#     && apt-get -qq update \
+#     && apt-get install -y sudo
+#   #RUN echo "jenkins ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+#   RUN echo "jenkins ALL= NOPASSWD: chmod" >> /etc/sudoers
 
 # Create the /app directory and give ownership to the new user, otherwise
 # if we switch to the new user first, they cannot create the workdir.
