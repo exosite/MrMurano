@@ -84,6 +84,11 @@ RUN /bin/chown -R jenkins /app
 
 # Prepare the bundle and rspec Ruby commands, and build Murano CLI.
 
+RUN echo "GEM_HOME: ${GEM_HOME}"
+RUN /bin/ls -la .
+RUN /bin/ls -la /
+RUN /bin/ls -la /.gem
+
 USER jenkins
 
 RUN cd /app && \
