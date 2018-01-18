@@ -81,8 +81,8 @@ PATH=${PATH}:/usr/local/bundle/bin
 # The host drive directories are mounted as root:root with 2755 permissions.
 # Fix this, lest the tests bomb on Errno::EACCES: Permission denied. Note
 # that Dockerfile gave the 'jenkins' user auto-sudo on the chmod command.
-chmod 2777 /app/report
-chmod 2777 /app/coverage
+#chmod 2777 /app/report
+#chmod 2777 /app/coverage
 
 echo "#####################################################################"
 echo "Testing \"$(murano -v)\" on \"$(ruby -v)\""
