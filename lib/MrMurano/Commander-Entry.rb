@@ -43,13 +43,14 @@ program :description, %(
 # etc., then do not do progress.
 # TEST/2017-08-23: Does this work on Windows?
 ARGV.push('--no-progress') unless $stdout.tty? || ARGV.include?('--no-progress')
+ARGV.push('--ascii') unless $stdout.tty? || ARGV.include?('--ascii')
+ARGV.push('--ascii') if ''.encode('ASCII').encoding == __ENCODING__
 #ARGV.push('--no-color') unless $stdout.tty? || ARGV.include?('--no-color')
 #$stderr.print("============== __ENCODING__: #{__ENCODING__}\n")
 #$stderr.print("============== ''.encode.encoding: #{''.encode("UTF-8").encoding}\n")
-ARGV.push('--ascii') if ''.encode('ASCII').encoding == __ENCODING__
 
 #ARGV.push('--no-progress')
-ARGV.push('--ascii')
+#ARGV.push('--ascii')
 #ARGV.push('--no-color')
 
 default_command :help
