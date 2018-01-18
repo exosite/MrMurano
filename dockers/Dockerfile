@@ -88,6 +88,10 @@ RUN echo "GEM_HOME: ${GEM_HOME}"
 RUN /bin/ls -la .
 RUN /bin/ls -la /
 RUN /bin/ls -la /.gem
+RUN /bin/ls -la /.gem/ruby
+RUN /bin/ls -la /.gem/ruby/2.0.0
+RUN /bin/ls -la /.gem/ruby/2.0.0/cache
+RUN /bin/ls -la /.gem/ruby/2.0.0/cache/rspec-support-3.7.0.gem
 
 USER jenkins
 
