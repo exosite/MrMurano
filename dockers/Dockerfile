@@ -98,11 +98,21 @@ RUN rbenv versions
 
 
 
-RUN cd /app && \
-  gem install bundler && \
-  gem install rspec && \
-  bundler install && \
-  rake build
+#RUN cd /app && \
+#  gem install bundler && \
+#  gem install rspec && \
+#  bundler install && \
+#  rake build
+RUN cd /app
+RUN gem install --user-install bundler
+RUN gem install --user-install rspec
+RUN /bin/ls -la /home/jenkins/.gem
+RUN /bin/ls -la /home/jenkins/.gem/ruby
+RUN bundler install
+RUN rake build
+
+
+
 
 # Install Murano CLI.
 
