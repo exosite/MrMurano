@@ -45,9 +45,11 @@ ENV LANG='C.UTF-8' LANGUAGE='C.UTF-8' LC_ALL='C.UTF-8'
 #RUN locale-gen en_US.UTF-8
 # dpkg-reconfigure locales is interactive
 #RUN dpkg-reconfigure locales
-RUN locale-gen --purge
+# Works, but seems no different than what apt-get install locales does post-install.
+#RUN locale-gen --purge
 # update-locale is for updating /etc/default/locale, so maybe something else?
-RUN update-locale LANG=en_US.UTF-8
+# update-locale: Error: invalid locale settings:  LANG=en_US.UTF-8
+#RUN update-locale LANG=en_US.UTF-8
 
 
 RUN useradd -m -s /bin/bash --uid 1001 -G root jenkins
