@@ -18,13 +18,16 @@ RUN \
   && apt-get -qq update \
   && apt-get install -y sudo
 
-ENV LANGUAGE en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LC_ALL en_US.UTF-8
+#ENV LANGUAGE en_US.UTF-8
+#ENV LANG en_US.UTF-8
+#ENV LC_ALL en_US.UTF-8
 
 RUN apt-get install -y locales
+RUN locale -a
 RUN locale-gen en_US.UTF-8
+RUN locale -a
 ENV LANG='en_US.UTF-8' LANGUAGE='en_US.UTF-8' LC_ALL='en_US.UTF-8'
+RUN locale -a
 
 #[91mperl: warning: Setting locale failed.
 #[0m[91mperl: warning: Please check that your locale settings:
