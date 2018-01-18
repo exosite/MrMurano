@@ -84,6 +84,8 @@ RUN wget -O ruby-install-0.6.0.tar.gz https://github.com/postmodern/ruby-install
 RUN tar -xzvf ruby-install-0.6.0.tar.gz
 RUN cd ruby-install-0.6.0
 USER root
+RUN cd /chruby/ruby-install-0.6.0
+RUN /bin/ls -la .
 RUN make install
 USER jenkins
 RUN ruby-install --latest ruby 2.3.3
@@ -99,6 +101,8 @@ RUN wget -O chruby-0.3.9.tar.gz https://github.com/postmodern/chruby/archive/v0.
 RUN tar -xzvf chruby-0.3.9.tar.gz
 RUN cd chruby-0.3.9
 USER root
+RUN cd /chruby/chruby-0.3.9
+RUN /bin/ls -la .
 RUN make install
 USER jenkins
 
