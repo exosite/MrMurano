@@ -21,7 +21,7 @@ RUN \
   && echo "deb-src http://ftp.us.debian.org/debian/ jessie main contrib non-free" \
     >> /etc/apt/sources.list \
   && apt-get -qq update \
-  && apt-get install -y sudo
+  && apt-get install -y sudo \
   && apt-get install -y git
 
 
