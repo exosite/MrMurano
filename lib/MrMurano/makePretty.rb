@@ -20,7 +20,9 @@ module MrMurano
     end
     HighLine.color_scheme = PRETTIES_COLORSCHEME
 
-    TERM_WIDTH, _rows = HighLine::SystemExtensions.terminal_size
+    TERM_WIDTH, _rows = (
+      !$stdout.tty? && [0, 0] || HighLine::SystemExtensions.terminal_size
+    )
 
     # rubocop:disable Style/MethodName: "Use snake_case for method names."
     def self.makeJsonPretty(data, options, indent: nil, object_nl: nil)
@@ -92,7 +94,10 @@ module MrMurano
       inter_spaces = (min_width == 0) && 0 || options.one_line && 1 || 3
       min_width = text.length + inter_spaces unless options.align
       if !options.one_line && options.align && min_width == 0
-        prefix = TERM_WIDTH - raw.length - text.length
+        prefix = 0
+        if TERM_WIDTH > (raw.length - text.length)
+          prefix = TERM_WIDTH - raw.length - text.length
+        end
         out += ' ' * prefix
         raw += ' ' * prefix
       end
