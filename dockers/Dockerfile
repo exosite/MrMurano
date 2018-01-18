@@ -84,6 +84,11 @@ RUN /bin/chown -R jenkins /app
 
 # Prepare the bundle and rspec Ruby commands, and build Murano CLI.
 
+RUN chmod 2775 /.gem
+RUN chmod 2775 /.gem
+RUN find /.gem -type d -exec chmod 2775 {} +
+RUN find /.gem -type f -exec chmod u+rw,g+rw,o+r {} +
+
 RUN echo "GEM_HOME: ${GEM_HOME}"
 RUN /bin/ls -la .
 RUN /bin/ls -la /
@@ -92,6 +97,9 @@ RUN /bin/ls -la /.gem/ruby
 RUN /bin/ls -la /.gem/ruby/2.0.0
 RUN /bin/ls -la /.gem/ruby/2.0.0/cache
 RUN /bin/ls -la /.gem/ruby/2.0.0/cache/rspec-support-3.7.0.gem
+
+
+
 
 USER jenkins
 
