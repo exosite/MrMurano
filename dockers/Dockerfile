@@ -91,11 +91,11 @@ RUN /bin/ls -la /.gem
 
 USER jenkins
 
-RUN cd /app && \
-  gem install bundler && \
-  gem install rspec && \
-  bundler install && \
-  rake build
+RUN cd /app
+#RUN gem install bundler
+RUN gem install rspec
+RUN bundler install
+RUN rake build
 
 # Install Murano CLI.
 
