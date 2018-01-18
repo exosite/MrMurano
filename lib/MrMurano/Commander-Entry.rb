@@ -48,9 +48,9 @@ ARGV.push('--no-progress') unless $stdout.tty? || ARGV.include?('--no-progress')
 #$stderr.print("============== ''.encode.encoding: #{''.encode("UTF-8").encoding}\n")
 ARGV.push('--ascii') if ''.encode('ASCII').encoding == __ENCODING__
 
-ARGV.push('--no-progress')
+#ARGV.push('--no-progress')
 ARGV.push('--ascii')
-ARGV.push('--no-color')
+#ARGV.push('--no-color')
 
 default_command :help
 
