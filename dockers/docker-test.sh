@@ -98,7 +98,8 @@ echo "\${LANG}: ${LANG}"
 rspec \
   --format html \
   --out /app/report/index-${RVERS}.html \
-  --format documentation
+  --format documentation \
+  --example 'murano init in existing project directory with SolutionFile 0.2.0'
 #  --example 'murano setting Writes (using Device2.identity_format) a number value fiftyHalf'
 #  --example 'murano link with project unlinks'
 
